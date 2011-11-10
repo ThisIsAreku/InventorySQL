@@ -1,0 +1,9 @@
+name: InventorySQL
+main: alexoft.InventorySQL.Main
+author: ThisIsAreku
+version: 0.3.3.5
+description: Sync your inventory on MySQL
+commands:
+    invSQL:
+        description: InventorySQL
+        usage: /invSQL

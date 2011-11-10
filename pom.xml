@@ -1,0 +1,99 @@
+<!--
+  Maven build file for Minecart Mania Core
+
+  Copyright (c) 2010-2011 Afforess <http://www.afforess.com>
+  Minecart Mania Core is licensed under Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Project information -->
+    <groupId>com.example</groupId>
+    <artifactId>name</artifactId>
+    <version>dev-SNAPSHOT</version>
+    <name>Name</name>
+    <url>http://example.com</url>
+    <description>Description</description>
+
+    <!-- Repository locations -->
+    <repositories>
+        <repository>
+            <id>bukkit-repo</id>
+            <url>http://repo.bukkit.org/artifactory/repo</url>
+        </repository>
+        <repository>
+            <id>craftfire-repo</id>
+            <url>http://db.craftfire.com/repo</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!-- Bukkit -->
+        <dependency>
+            <groupId>org.bukkit</groupId>
+            <artifactId>bukkit</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+        <!-- CraftBukkit -->
+        <dependency>
+            <groupId>org.bukkit</groupId>
+            <artifactId>craftbukkit</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>${basedir}/src/</sourceDirectory>
+
+        <!-- Resources -->
+        <resources>
+            <resource>
+                <targetPath>.</targetPath>
+                <filtering>true</filtering>
+                <directory>${basedir}/src/</directory>
+                <includes>
+                    <include>plugin.yml</include>
+                    <include>MinecartManiaLocale.xml</include>
+                    <include>MinecartManiaConfiguration.xml</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <!-- Plugins -->
+        <plugins>
+
+            <!-- Compile plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+            </plugin>
+
+            <!-- JAR creation plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3.1</version>
+                <configuration>
+                    <archive>
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                        <pomPropertiesFile>false</pomPropertiesFile>
+                        <manifest>
+                            <addDefaultSpecificationEntries>false</addDefaultSpecificationEntries>
+                            <addDefaultImplementationEntries>false</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+
+    </build>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <skipTests>true</skipTests>
+    </properties>
+
+</project>
