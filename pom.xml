@@ -2,12 +2,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Project information -->
-    <groupId>alexoft</groupId>
-    <artifactId>inventorysql</artifactId>
+    <groupId>fr.orvale</groupId>
+    <artifactId>InventorySQL</artifactId>
     <version>dev-SNAPSHOT</version>
-    <name>InventorySQL</name>
+    <name>Orvale</name>
     <url>http://www.orvale.fr</url>
-    <description>InventorySQL - Orvale version</description>
+    <description>Orvale InventorySQL</description>
 
     <!-- Repository locations -->
     <repositories>
@@ -83,4 +83,8 @@
         <skipTests>true</skipTests>
     </properties>
 
+    <ciManagement>
+    	<system>Jenkins</system>
+    	<url>http://jenkins-ci.org/</url>
+    </ciManagement>
 </project>

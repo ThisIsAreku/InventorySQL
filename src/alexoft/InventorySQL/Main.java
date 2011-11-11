@@ -3,17 +3,18 @@ package alexoft.InventorySQL;
 
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.logging.Level;
 
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.config.Configuration;
 
 import com.alta189.MySQL.mysqlCore;
 
@@ -35,7 +36,6 @@ public class Main extends JavaPlugin {
     
     public Boolean             MySQL = true;
     public mysqlCore           manageMySQL;
-    public Configuration       settings;
 
     public static String[] MYSQL_FIELDS = new String[]{
     	"id", "owner", "ischest", "x", "y", "z", "inventory", "pendings"
@@ -75,7 +75,12 @@ public class Main extends JavaPlugin {
                 + this.getDescription().getVersion());
         log("Enabling...");
         
-        this.loadConfig();
+        try {
+			this.loadConfig();
+		} catch (Exception e) {
+			log("Unable to load config");
+			this.Disable();
+		}
 
         if (this.MySQL) {
             manageMySQL = new mysqlCore(this.getServer().getLogger(),
@@ -161,7 +166,7 @@ public class Main extends JavaPlugin {
 	    }
     }
 
-    public void loadConfig() {
+    public void loadConfig() throws FileNotFoundException, IOException, InvalidConfigurationException {
         File cfgDir = this.getDataFolder();
         File cfgFile = new File(cfgDir + "/config.yml");
 
@@ -174,53 +179,53 @@ public class Main extends JavaPlugin {
             } catch (IOException ex) {
                 logException(ex);
             }
+        }else{
+            this.getConfig().load(cfgFile);
         }
-        settings = new Configuration(cfgFile);
-        settings.load();
         
         String tmp = String.valueOf(Math.random());
         
         this.MySQL = true;
         
-        this.dbHost = settings.getString("host", "");
-        this.dbUser = settings.getString("user", "");
-        this.dbPass = settings.getString("pass", tmp);
-        this.dbDatabase = settings.getString("db", "");
-        this.dbTable = settings.getString("table", "");
-        this.delayCheck = settings.getInt("check-interval", -1);
+        this.dbHost = this.getConfig().getString("host", "");
+        this.dbUser = this.getConfig().getString("user", "");
+        this.dbPass = this.getConfig().getString("pass", tmp);
+        this.dbDatabase = this.getConfig().getString("db", "");
+        this.dbTable = this.getConfig().getString("table", "");
+        this.delayCheck = this.getConfig().getInt("check-interval", -1);
         
         if (this.delayCheck == -1) {
             log(Level.WARNING, "Creating 'check-interval' config...");
             this.delayCheck = 600;
-            settings.setProperty("check-interval", this.delayCheck);
+            this.getConfig().set("check-interval", this.delayCheck);
         }
         if (this.dbHost.equals("")) {
             log(Level.WARNING, "Creating 'host' config...");
-            settings.setProperty("host", "localhost");
+            this.getConfig().set("host", "localhost");
             this.MySQL = false;
         }
         if (this.dbUser.equals("")) {
             log(Level.WARNING, "Creating 'user' config...");
-            settings.setProperty("user", "root");
+            this.getConfig().set("user", "root");
             this.MySQL = false;
         }
         if (this.dbPass.equals(tmp)) {
             log(Level.WARNING, "Creating 'pass' config...");
-            settings.setProperty("pass", "pass");
+            this.getConfig().set("pass", "pass");
             this.MySQL = false;
         }
         if (this.dbDatabase.equals("")) {
             log(Level.WARNING, "Creating 'db' config...");
-            settings.setProperty("db", "minecraft");
+            this.getConfig().set("db", "minecraft");
             this.MySQL = false;
         }
         if (this.dbTable.equals("")) {
             log(Level.WARNING, "Creating 'table' config...");
-            settings.setProperty("table", "InventorySQL");
+            this.getConfig().set("table", "InventorySQL");
             this.MySQL = false;
         }
         this.delayCheck *= 20;
-        settings.save();
+        this.getConfig().save(cfgFile);
     }
    
     private void updateUser(Player player, boolean async) {
