@@ -2,15 +2,10 @@ package alexoft.InventorySQL;
 
 
 import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -120,7 +115,7 @@ public class UpdateDatabase extends Thread {
             }
             r = this.plugin.manageMySQL.sqlQuery(
                     "SELECT * FROM `" + this.plugin.dbTable
-                    + "` WHERE LOWER(`player`) =LOWER('" + player.getName()
+                    + "` WHERE LOWER(`owner`) =LOWER('" + player.getName()
                     + "');");
 			
             if (r.first()) {
@@ -128,8 +123,8 @@ public class UpdateDatabase extends Thread {
                 String pendingData = r.getString("pendings");
 
                 if (!"".equals(pendingData)) {
-                    this.plugin.log("pendings items for " + player.getName());
-                    int empty = -1;
+                    this.plugin.log(Level.FINE, "pendings items for " + player.getName());
+                    int empty;
 
                     for (ActionStack i:buildPendList(pendingData)) {
                         if ("+".equals(i.params())) {
@@ -139,7 +134,7 @@ public class UpdateDatabase extends Thread {
                             } else {
                                 player.getInventory().setItem(empty, i.item());
                                                         
-                                this.plugin.log(
+                                this.plugin.log(Level.FINER, "\t" +
                                         player.getName() + " : " + i.params()
                                         + " => " + i.item().getType().toString());
                             }
@@ -157,7 +152,7 @@ public class UpdateDatabase extends Thread {
 
                                     fullInv.add(new ActionStack(m.get(key), "-"));
                                 }                                                                        
-                                this.plugin.log(
+                                this.plugin.log(Level.FINER, "\t" +
                                         player.getName() + " : " + i.params()
                                         + " => " + i.item().getType().toString());
                             } else {
@@ -175,6 +170,7 @@ public class UpdateDatabase extends Thread {
 				
                 String invData = buildInvString(player.getInventory());
 
+                this.plugin.log(Level.FINE, "\t Unable to add/remove " + fullInv.size() + " item(s)");
                 this.plugin.manageMySQL.updateQuery(
                         "UPDATE `" + this.plugin.dbTable
                         + "` SET `inventory` = '" + invData
@@ -186,7 +182,7 @@ public class UpdateDatabase extends Thread {
 
                 this.plugin.manageMySQL.insertQuery(
                         "INSERT INTO `" + this.plugin.dbTable
-                        + "`(`id`, `player`, `inventory`, `pendings`) VALUES (null,'"
+                        + "`(`id`, `owner`, `inventory`, `pendings`) VALUES (null,'"
                         + player.getName() + "','" + invData + "','')");
             }
         } catch (Exception ex) {

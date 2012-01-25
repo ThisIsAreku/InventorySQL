@@ -1,19 +1,17 @@
 package com.alta189.MySQL;
 
-
 // ~--- JDK imports ------------------------------------------------------------
-
 import java.net.MalformedURLException;
 import java.sql.*;
 
-
 public class DatabaseHandler {
+
     private Connection connection;
-    private mysqlCore  core;
-    private String     database;
-    private String     dblocation;
-    private String     password;
-    private String     username;
+    private mysqlCore core;
+    private String database;
+    private String dblocation;
+    private String password;
+    private String username;
 
     public DatabaseHandler(mysqlCore core, String dbLocation, String database, String username, String password) {
         this.core = core;
@@ -23,25 +21,26 @@ public class DatabaseHandler {
         this.password = password;
     }
 
-    private void openConnection() throws MalformedURLException, InstantiationException, IllegalAccessException {
+    private boolean openConnection() throws MalformedURLException, InstantiationException, IllegalAccessException{
         try {
             Class.forName("com.mysql.jdbc.Driver");
             connection = DriverManager.getConnection(
                     "jdbc:mysql://" + dblocation + "/" + database, username,
                     password);
+            return true;
         } catch (ClassNotFoundException e) {
             core.writeError("ClassNotFoundException! " + e.getMessage(), true);
         } catch (SQLException e) {
             core.writeError("SQLException! " + e.getMessage(), true);
         }
+        return false;
     }
 
     public Boolean checkConnection() {
         if (connection == null) {
-            try {
-                openConnection();
+            try {              
 
-                return true;
+                return openConnection();
             } catch (MalformedURLException ex) {
                 core.writeError("MalformedURLException! " + ex.getMessage(),
                         true);
@@ -71,7 +70,7 @@ public class DatabaseHandler {
         }
     }
 
-    public Connection getConnection() throws MalformedURLException, InstantiationException, IllegalAccessException {
+    public Connection getConnection() throws MalformedURLException, InstantiationException, IllegalAccessException, SQLException {
         if (connection == null) {
             openConnection();
         }
@@ -80,11 +79,11 @@ public class DatabaseHandler {
     }
 
     public ResultSet sqlQuery(String query)
-        throws MalformedURLException, InstantiationException, IllegalAccessException {
+            throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
             Connection c = getConnection();
-            Statement  statement = c.createStatement();
-            ResultSet  result = statement.executeQuery(query);
+            Statement statement = c.createStatement();
+            ResultSet result = statement.executeQuery(query);
 
             return result;
         } catch (SQLException ex) {
@@ -97,7 +96,7 @@ public class DatabaseHandler {
     public void insertQuery(String query) throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
             Connection c = getConnection();
-            Statement  statement = c.createStatement();
+            Statement statement = c.createStatement();
 
             statement.executeUpdate(query);
         } catch (SQLException ex) {
@@ -110,7 +109,7 @@ public class DatabaseHandler {
     public void updateQuery(String query) throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
             Connection c = getConnection();
-            Statement  statement = c.createStatement();
+            Statement statement = c.createStatement();
 
             statement.executeUpdate(query);
         } catch (SQLException ex) {
@@ -123,7 +122,7 @@ public class DatabaseHandler {
     public void deleteQuery(String query) throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
             Connection c = getConnection();
-            Statement  statement = c.createStatement();
+            Statement statement = c.createStatement();
 
             statement.executeUpdate(query);
         } catch (SQLException ex) {
@@ -134,11 +133,11 @@ public class DatabaseHandler {
     }
 
     public Boolean checkTable(String table)
-        throws MalformedURLException, InstantiationException, IllegalAccessException {
+            throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
             Connection c = getConnection();
-            Statement  statement = c.createStatement();
-            ResultSet  result = statement.executeQuery("SELECT * FROM " + table);
+            Statement statement = c.createStatement();
+            ResultSet result = statement.executeQuery("SELECT * FROM " + table);
 
             if (result == null) {
                 return false;
@@ -163,7 +162,7 @@ public class DatabaseHandler {
     }
 
     public Boolean wipeTable(String table)
-        throws MalformedURLException, InstantiationException, IllegalAccessException {
+            throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
             if (!core.checkTable(table)) {
                 core.writeError(
@@ -175,8 +174,8 @@ public class DatabaseHandler {
             }
 
             Connection c = getConnection();
-            Statement  statement = c.createStatement();
-            String     query = "DELETE FROM " + table + ";";
+            Statement statement = c.createStatement();
+            String query = "DELETE FROM " + table + ";";
 
             statement.executeUpdate(query);
 
@@ -210,5 +209,3 @@ public class DatabaseHandler {
         }
     }
 }
-
-// ~ Formatted by Jindent --- http://www.jindent.com

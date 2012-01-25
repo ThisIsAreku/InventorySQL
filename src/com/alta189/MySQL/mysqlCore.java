@@ -4,10 +4,9 @@ package com.alta189.MySQL;
 // ~--- JDK imports ------------------------------------------------------------
 
 import java.net.MalformedURLException;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
-
+import java.sql.SQLException;
 import java.util.logging.Logger;
 
 
@@ -29,11 +28,9 @@ public class mysqlCore {
         this.password = password;
     }
 
-    public Boolean initialize() {
+    public void initialize() {
         this.manageDB = new DatabaseHandler(this, this.host, this.database,
                 this.username, this.password);
-
-        return false;
     }
 
     public void writeInfo(String toWrite) {
@@ -85,7 +82,7 @@ public class mysqlCore {
         return this.manageDB.wipeTable(table);
     }
 
-    public Connection getConnection() throws MalformedURLException, InstantiationException, IllegalAccessException {
+    public Connection getConnection() throws MalformedURLException, InstantiationException, IllegalAccessException, SQLException {
         return this.manageDB.getConnection();
     }
 

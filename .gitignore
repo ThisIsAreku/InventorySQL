@@ -5,4 +5,5 @@
 /bin/
 /web.zip
 /buildJAR.jardesc
-/target/
+/target/classes/
+/target/maven-archiver/
