@@ -4,12 +4,7 @@ package com.alta189.MySQL;
 // ~--- JDK imports ------------------------------------------------------------
 
 import java.net.MalformedURLException;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 
 public class DatabaseHandler {
@@ -87,8 +82,8 @@ public class DatabaseHandler {
     public ResultSet sqlQuery(String query)
         throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
-            Connection connection = getConnection();
-            Statement  statement = connection.createStatement();
+            Connection c = getConnection();
+            Statement  statement = c.createStatement();
             ResultSet  result = statement.executeQuery(query);
 
             return result;
@@ -101,8 +96,8 @@ public class DatabaseHandler {
 
     public void insertQuery(String query) throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
-            Connection connection = getConnection();
-            Statement  statement = connection.createStatement();
+            Connection c = getConnection();
+            Statement  statement = c.createStatement();
 
             statement.executeUpdate(query);
         } catch (SQLException ex) {
@@ -114,8 +109,8 @@ public class DatabaseHandler {
 
     public void updateQuery(String query) throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
-            Connection connection = getConnection();
-            Statement  statement = connection.createStatement();
+            Connection c = getConnection();
+            Statement  statement = c.createStatement();
 
             statement.executeUpdate(query);
         } catch (SQLException ex) {
@@ -127,8 +122,8 @@ public class DatabaseHandler {
 
     public void deleteQuery(String query) throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
-            Connection connection = getConnection();
-            Statement  statement = connection.createStatement();
+            Connection c = getConnection();
+            Statement  statement = c.createStatement();
 
             statement.executeUpdate(query);
         } catch (SQLException ex) {
@@ -141,8 +136,8 @@ public class DatabaseHandler {
     public Boolean checkTable(String table)
         throws MalformedURLException, InstantiationException, IllegalAccessException {
         try {
-            Connection connection = getConnection();
-            Statement  statement = connection.createStatement();
+            Connection c = getConnection();
+            Statement  statement = c.createStatement();
             ResultSet  result = statement.executeQuery("SELECT * FROM " + table);
 
             if (result == null) {
@@ -179,8 +174,8 @@ public class DatabaseHandler {
                 return false;
             }
 
-            Connection connection = getConnection();
-            Statement  statement = connection.createStatement();
+            Connection c = getConnection();
+            Statement  statement = c.createStatement();
             String     query = "DELETE FROM " + table + ";";
 
             statement.executeUpdate(query);

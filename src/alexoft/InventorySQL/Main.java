@@ -2,21 +2,19 @@
 package alexoft.InventorySQL;
 
 
+import com.alta189.MySQL.mysqlCore;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.logging.Level;
-
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import com.alta189.MySQL.mysqlCore;
 
 
 /**
@@ -42,7 +40,7 @@ public class Main extends JavaPlugin {
     };
 
     public void log(Level level, String l) {
-        this.getServer().getLogger().log(level, "[InventorySQL] " + l);
+        this.getServer().getLogger().log(level, "[InventorySQL] {0}", l);
     }
 
     public void log(String l) {
@@ -76,11 +74,11 @@ public class Main extends JavaPlugin {
         log("Enabling...");
         
         try {
-			this.loadConfig();
-		} catch (Exception e) {
-			log("Unable to load config");
-			this.Disable();
-		}
+            this.loadConfig();
+	} catch (Exception e) {
+            log("Unable to load config");
+            this.Disable();
+	}
 
         if (this.MySQL) {
             manageMySQL = new mysqlCore(this.getServer().getLogger(),
@@ -100,20 +98,8 @@ public class Main extends JavaPlugin {
                 this.logException(ex);
             }
 
-            PluginManager pm = getServer().getPluginManager();
             this.playerListener = new InventorySQLPlayerListener(this);
             this.commandListener = new InventorySQLCommandListener(this);
-            
-            pm.registerEvent(Event.Type.PLAYER_DROP_ITEM, playerListener,
-                    Priority.Monitor, this);
-            pm.registerEvent(Event.Type.PLAYER_PICKUP_ITEM, playerListener,
-                    Priority.Monitor, this);
-            pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener,
-                    Priority.Monitor, this);
-            pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener,
-                    Priority.Highest, this);
-            pm.registerEvent(Event.Type.PLAYER_LOGIN, playerListener,
-                    Priority.Highest, this);
             
             this.getCommand("invSQL").setExecutor(commandListener);
             
@@ -140,8 +126,8 @@ public class Main extends JavaPlugin {
                     "`x` int(11) NOT NULL DEFAULT '0'," +
                     "`y` tinyint(3) unsigned NOT NULL DEFAULT '0'," +
                     "`z` int(11) NOT NULL DEFAULT '0'," +
-                    "`inventory` VARCHAR(1024)," +
-                    "`pendings` VARCHAR(1024), PRIMARY KEY (`id`))" +
+                    "`inventory` longtext," +
+                    "`pendings` longtext, PRIMARY KEY (`id`))" +
                     "ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 	        if (!this.manageMySQL.checkTable(this.dbTable)) {
 	            log("Creating table...");	            
