@@ -67,7 +67,7 @@
                 <version>2.3.2</version>
                 <configuration>
                     <archive>
-                                                <compress>true</compress>
+                        <compress>true</compress>
                     </archive>
                 </configuration>
             </plugin>

@@ -50,7 +50,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
                 if ("all".equals(args[1])) {
                     this.plugin.invokeCheck(true);
                 }
-                Player p = null;
+                Player p;
 
                 for (int i = 1; i < args.length; i++) {
                     p = this.plugin.getServer().getPlayer(args[i]);
