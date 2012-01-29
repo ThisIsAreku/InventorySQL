@@ -113,7 +113,7 @@ public class UpdateDatabase extends Thread {
             	return;
             	
             }
-            r = this.plugin.manageMySQL.sqlQuery(
+            r = this.plugin.manageMySQL.query(
                     "SELECT * FROM `" + this.plugin.dbTable
                     + "` WHERE LOWER(`owner`) =LOWER('" + player.getName()
                     + "');");
@@ -171,7 +171,7 @@ public class UpdateDatabase extends Thread {
                 String invData = buildInvString(player.getInventory());
 
                 this.plugin.log(Level.FINE, "\t Unable to add/remove " + fullInv.size() + " item(s)");
-                this.plugin.manageMySQL.updateQuery(
+                this.plugin.manageMySQL.query(
                         "UPDATE `" + this.plugin.dbTable
                         + "` SET `inventory` = '" + invData
                         + "', `pendings` = '"
@@ -180,7 +180,7 @@ public class UpdateDatabase extends Thread {
             } else {
                 String invData = buildInvString(player.getInventory());
 
-                this.plugin.manageMySQL.insertQuery(
+                this.plugin.manageMySQL.query(
                         "INSERT INTO `" + this.plugin.dbTable
                         + "`(`id`, `owner`, `inventory`, `pendings`) VALUES (null,'"
                         + player.getName() + "','" + invData + "','')");

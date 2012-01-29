@@ -1,6 +1,6 @@
 package alexoft.InventorySQL;
 
-import com.alta189.MySQL.mysqlCore;
+import PatPeter.SQLibrary.MySQL;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -27,7 +27,7 @@ public class Main extends JavaPlugin {
     private InventorySQLPlayerListener playerListener;
     private InventorySQLCommandListener commandListener;
     public Boolean MySQL = true;
-    public mysqlCore manageMySQL;
+    public MySQL manageMySQL;
     public static String[] MYSQL_FIELDS = new String[]{
         "id", "owner", "ischest", "x", "y", "z", "inventory", "pendings"
     };
@@ -81,10 +81,9 @@ public class Main extends JavaPlugin {
 
         if (this.MySQL) {
             try {
-                manageMySQL = new mysqlCore(this.getServer().getLogger(),
-                        "[InventorySQL] ", this.dbHost, this.dbDatabase, this.dbUser,
+                manageMySQL = new MySQL(this.getServer().getLogger(),
+                        "[InventorySQL] ", this.dbHost, "3306", this.dbDatabase, this.dbUser,
                         this.dbPass);
-                manageMySQL.initialize();
 
                 if (this.manageMySQL.checkConnection()) {
                     log("MySQL connection successful");
@@ -136,11 +135,11 @@ public class Main extends JavaPlugin {
                     log(Level.SEVERE, "Cannot create table, check your config !");
                 }
             } else {
-                ResultSet rs = this.manageMySQL.sqlQuery("SELECT * FROM `" + this.dbTable + "`");
+                ResultSet rs = this.manageMySQL.query("SELECT * FROM `" + this.dbTable + "`");
                 ResultSetMetaData metadata = rs.getMetaData();
                 if (metadata.getColumnCount() != MYSQL_FIELDS.length) {
                     log("table is an old version, updating...");
-                    this.manageMySQL.deleteQuery("DROP TABLE `" + this.dbTable + "`");
+                    this.manageMySQL.query("DROP TABLE `" + this.dbTable + "`");
                     if (!this.manageMySQL.createTable(query)) {
                         log(Level.SEVERE, "Cannot create table, check your config !");
                     }
