@@ -1,11 +1,8 @@
 /.classpath
 /.project
-/web/
-/dist/
 /bin/
-/web.zip
 /buildJAR.jardesc
 /target/classes/
 /target/maven-archiver/
-nb-configuration.xml
+/nb-configuration.xml
 /*.jardesc
