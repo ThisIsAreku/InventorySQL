@@ -11,10 +11,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/**
- *
- * @author Alexandre
- */
+@SuppressWarnings("unused")
 public class Main extends JavaPlugin {
 
     public String dbDatabase = null;
@@ -24,7 +21,7 @@ public class Main extends JavaPlugin {
     public String dbUser = null;
     public int verbosity = 0;
     public long delayCheck = 0;
-    private InventorySQLPlayerListener playerListener;
+	private InventorySQLPlayerListener playerListener;
     private InventorySQLCommandListener commandListener;
     public Boolean MySQL = true;
     public MySQL manageMySQL;
@@ -77,9 +74,14 @@ public class Main extends JavaPlugin {
         } catch (Exception e) {
             log("Unable to load config");
             this.Disable();
+            return;
         }
 
-        if (this.MySQL) {
+        if (!this.MySQL) {
+            log(Level.SEVERE, "Configuration error, plugin disabled");
+            this.Disable();
+            return;
+        }
             try {
                 manageMySQL = new MySQL(this.getServer().getLogger(),
                         "[InventorySQL] ", this.dbHost, "3306", this.dbDatabase, this.dbUser,
@@ -88,28 +90,27 @@ public class Main extends JavaPlugin {
                 if (this.manageMySQL.checkConnection()) {
                     log("MySQL connection successful");
                     checkUpdateTable();
-
-                    this.playerListener = new InventorySQLPlayerListener(this);
-                    this.commandListener = new InventorySQLCommandListener(this);
-
-                    this.getCommand("invSQL").setExecutor(commandListener);
-
-                    this.getServer().getScheduler().scheduleAsyncRepeatingTask(this,
-                            new UpdateDatabase(this), 10 * 20, this.delayCheck);
-                    log("Enabled !");
                 } else {
                     log(Level.SEVERE, "MySQL connection failed");
                     this.Disable();
+                    return;
                 }
             } catch (Exception ex) {
                 this.logException(ex);
-                log(Level.SEVERE, "MySQL connection failed");
+                //log(Level.SEVERE, "MySQL connection failed");
                 this.Disable();
+                return;
             }
-        } else {
-            log(Level.SEVERE, "Configuration error, plugin disabled");
-            this.Disable();
-        }
+
+
+        this.playerListener = new InventorySQLPlayerListener(this);
+        this.commandListener = new InventorySQLCommandListener(this);
+
+        this.getCommand("invSQL").setExecutor(commandListener);
+
+        this.getServer().getScheduler().scheduleAsyncRepeatingTask(this,
+                new UpdateDatabase(this), 10 * 20, this.delayCheck);
+        log("Enabled !");
     }
 
     public void Disable() {
