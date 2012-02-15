@@ -2,10 +2,15 @@ package alexoft.InventorySQL;
 
 
 import java.sql.ResultSet;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -23,17 +28,17 @@ public class UpdateDatabase extends Thread {
             "\\[(-|\\+)?\\(([0-9]{1,3}):([0-9]{1,2})\\)x([0-9]{1,2})\\]");
     public Main plugin;
     public boolean playerUpdate;
-    public Player player;
+    public Player[] players;
 	
     public UpdateDatabase(Main plugin) {
         this.plugin = plugin;
         this.playerUpdate = false;
     }
 
-    public UpdateDatabase(Main plugin, boolean playerUpdate, Player player) {
+    public UpdateDatabase(Main plugin, boolean playerUpdate, Player[] players) {
         this.plugin = plugin;
         this.playerUpdate = playerUpdate;
-        this.player = player;
+        this.players = players;
     }
 
     public List<ActionStack> buildInvList(String data) {
@@ -103,17 +108,17 @@ public class UpdateDatabase extends Thread {
     public void playerLogic(Player player) {
         try {
             ResultSet r;
-            if(!this.plugin.manageMySQL.checkConnection()) {
-            	this.plugin.log(Level.SEVERE, "MySQL Connection error..");
+            if(!this.plugin.MYSQLDB.checkConnectionIsAlive(true)) {
+            	Main.log(Level.SEVERE, "MySQL Connection error..");
             	return;
             }
-            if (!this.plugin.manageMySQL.checkTable(this.plugin.dbTable)) {
-            	this.plugin.log(Level.SEVERE, "Table has suddenly disappear, disabling plugin...");
+            if (!this.plugin.MYSQLDB.tableExist(this.plugin.dbTable)) {
+            	Main.log(Level.SEVERE, "Table has suddenly disappear, disabling plugin...");
             	this.plugin.Disable();
             	return;
             	
             }
-            r = this.plugin.manageMySQL.query(
+            r = this.plugin.MYSQLDB.query(
                     "SELECT * FROM `" + this.plugin.dbTable
                     + "` WHERE LOWER(`owner`) =LOWER('" + player.getName()
                     + "');");
@@ -123,7 +128,7 @@ public class UpdateDatabase extends Thread {
                 String pendingData = r.getString("pendings");
 
                 if (!"".equals(pendingData)) {
-                    this.plugin.log(Level.FINE, "pendings items for " + player.getName());
+                    Main.log(Level.FINE, "pendings items for " + player.getName());
                     int empty;
 
                     for (ActionStack i:buildPendList(pendingData)) {
@@ -134,7 +139,7 @@ public class UpdateDatabase extends Thread {
                             } else {
                                 player.getInventory().setItem(empty, i.item());
                                                         
-                                this.plugin.log(Level.FINER, "\t" +
+                                Main.log(Level.FINER, "\t" +
                                         player.getName() + " : " + i.params()
                                         + " => " + i.item().getType().toString());
                             }
@@ -152,14 +157,14 @@ public class UpdateDatabase extends Thread {
 
                                     fullInv.add(new ActionStack(m.get(key), "-"));
                                 }                                                                        
-                                this.plugin.log(Level.FINER, "\t" +
+                                Main.log(Level.FINER, "\t" +
                                         player.getName() + " : " + i.params()
                                         + " => " + i.item().getType().toString());
                             } else {
                                 fullInv.add(i);
                             }
                         } else {
-                            this.plugin.log(Level.INFO,
+                            Main.log(Level.INFO,
                                     "bad command '" + i.params()
                                     + "' for player '" + player.getName()
                                     + "' in pendings data, ignored");
@@ -170,8 +175,8 @@ public class UpdateDatabase extends Thread {
 				
                 String invData = buildInvString(player.getInventory());
 
-                this.plugin.log(Level.FINE, "\t Unable to add/remove " + fullInv.size() + " item(s)");
-                this.plugin.manageMySQL.query(
+                Main.log(Level.FINE, "\t Unable to add/remove " + fullInv.size() + " item(s)");
+                this.plugin.MYSQLDB.queryUpdate(
                         "UPDATE `" + this.plugin.dbTable
                         + "` SET `inventory` = '" + invData
                         + "', `pendings` = '"
@@ -180,20 +185,23 @@ public class UpdateDatabase extends Thread {
             } else {
                 String invData = buildInvString(player.getInventory());
 
-                this.plugin.manageMySQL.query(
+                this.plugin.MYSQLDB.queryUpdate(
                         "INSERT INTO `" + this.plugin.dbTable
                         + "`(`id`, `owner`, `inventory`, `pendings`) VALUES (null,'"
                         + player.getName() + "','" + invData + "','')");
             }
         } catch (Exception ex) {
-            this.plugin.logException(ex);
+            Main.logException(ex, "exception in playerlogic");
         }
     }
 	
     @Override
     public void run() {
         if (this.playerUpdate) {
-            playerLogic(this.player);
+            for (Player p: this.plugin.getServer().getOnlinePlayers()) {
+            	playerLogic(p);
+            }
+            
 
         } else {
             for (Player p: this.plugin.getServer().getOnlinePlayers()) {

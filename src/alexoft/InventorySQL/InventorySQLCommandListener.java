@@ -1,5 +1,8 @@
 package alexoft.InventorySQL;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -16,22 +19,22 @@ public class InventorySQLCommandListener implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender cs, Command cmnd, String label,
 			String[] args) {
-		if (!(cs instanceof Player)) {
-			return false;
+		boolean isNotPlayer = true;
+		if (cs instanceof Player) {
+			isNotPlayer = false;
 		}
-		Player player = (Player) cs;
 
-		if (!player.isOp()) {
-			player.sendMessage(ChatColor.RED + "You cannot use this command");
+		if (!cs.isOp()) {
+			sendMessage(cs, ChatColor.RED + "You cannot use this command");
 			return true;
 		}
 		if (args.length == 0) {
-			player.sendMessage(ChatColor.GREEN + "Usage :");
-			player.sendMessage(ChatColor.GREEN
+			sendMessage(cs, ChatColor.GREEN + "Usage :");
+			sendMessage(cs, ChatColor.GREEN
 					+ " * /invSQL check : update yourself");
-			player.sendMessage(ChatColor.GREEN
+			sendMessage(cs, ChatColor.GREEN
 					+ " * /invSQL check all : update all players");
-			player.sendMessage(ChatColor.GREEN
+			sendMessage(cs, ChatColor.GREEN
 					+ " * /invSQL check <player>, <player>, <player>, .. : update specified players");
 			return true;
 		}
@@ -40,20 +43,30 @@ public class InventorySQLCommandListener implements CommandExecutor {
 				if ("all".equals(args[1])) {
 					this.plugin.invokeCheck(true);
 				}
-				Player p;
-
+				Player pT;
+				List<Player> p = new ArrayList<Player>();
 				for (int i = 1; i < args.length; i++) {
-					p = this.plugin.getServer().getPlayer(args[i]);
-					if (p != null) {
-						this.plugin.invokeCheck(p, true);
+
+					pT = this.plugin.getServer().getPlayer(args[i]);
+					if (pT != null) {
+						p.add(pT);
 					}
 				}
+				if (p.size() > 0)
+					this.plugin.invokeCheck(p.toArray(new Player[] {}), true);
 			} else {
-				this.plugin.invokeCheck(player, true);
+				sendMessage(cs, ChatColor.RED
+						+ "You cannot check yourself as a Console !");
+				if (!isNotPlayer)
+					this.plugin.invokeCheck(new Player[] { (Player) cs }, true);
 			}
 			return true;
 		}
 		return true;
+	}
+	
+	public void sendMessage(CommandSender cs, String m){
+		cs.sendMessage("[InventorySQL] " + m);
 	}
 
 }
