@@ -14,9 +14,9 @@ public class InventorySQLCommandListener implements CommandExecutor {
 
 	public InventorySQLCommandListener(Main plugin) {
 		this.plugin = plugin;
-	}
+	} 
+	 
 
-	@Override
 	public boolean onCommand(CommandSender cs, Command cmnd, String label,
 			String[] args) {
 		boolean isNotPlayer = true;

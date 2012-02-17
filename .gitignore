@@ -6,3 +6,4 @@
 /target/maven-archiver/
 /nb-configuration.xml
 /*.jardesc
+/.settings/
