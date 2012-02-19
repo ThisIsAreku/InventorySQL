@@ -36,13 +36,7 @@ public class Main extends JavaPlugin {
 			"ischest", "x", "y", "z", "inventory", "pendings" };
 
 	public static void log(Level level, String m) {
-		if ((level == Level.FINER) && (verbosity < 2)) {
-			return;
-		}
-		if ((level == Level.FINE) && (verbosity < 1)) {
-			return;
-		}
-		l.log(level, "[InventorySQL] " + m);
+		l.log(level, m);
 	}
 
 	public static void log(String m) {
@@ -104,8 +98,13 @@ public class Main extends JavaPlugin {
 
 			log("MySQL connection successful");
 			checkUpdateTable();
-		} catch (Exception ex) {
+		} catch (SQLException ex) {
 			Main.logException(ex, "mysql init");
+			log(Level.SEVERE, "MySQL connection failed");
+			this.Disable();
+			return;
+		} catch (ClassNotFoundException e) {
+			Main.logException(e, "mysql init");
 			log(Level.SEVERE, "MySQL connection failed");
 			this.Disable();
 			return;

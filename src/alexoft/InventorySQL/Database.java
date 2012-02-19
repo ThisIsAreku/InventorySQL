@@ -12,7 +12,7 @@ public class Database {
 	private String url;
 	private Connection conn;
 
-	public Database(String url, String user, String password) throws Exception {
+	public Database(String url, String user, String password) throws SQLException, ClassNotFoundException {
 
 		this.user = user;
 		this.password = password;
