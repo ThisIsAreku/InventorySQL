@@ -7,3 +7,4 @@
 /nb-configuration.xml
 /*.jardesc
 /.settings/
+/target/generated-sources/

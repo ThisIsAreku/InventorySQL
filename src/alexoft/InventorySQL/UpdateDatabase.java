@@ -86,9 +86,8 @@ public class UpdateDatabase extends Thread {
         for (int i = 0; i <= 39; i++) {
             m = inventory.getItem(i);
             b = m.getData();
-            l += "[" + i + "(" + m.getTypeId() + ":"
-                    + (b != null ? b.getData() : "0") + ")x" + m.getAmount()
-                    + "],";
+            l += "[" + i + "(" + m.getTypeId() + ":" + (b != null ? b.getData() : "0")
+                    + ")x" + m.getAmount() + "],";
         }
         return l.substring(0, l.length() - 1);
     }
@@ -100,8 +99,7 @@ public class UpdateDatabase extends Thread {
         for (ActionStack m: items) {
             b = m.item().getData();
             l += "[" + m.params() + "(" + m.item().getTypeId() + ":"
-                    + (b != null ? b.getData() : "0") + ")x"
-                    + m.item().getAmount() + "],";
+                    + (b != null ? b.getData() : "0") + ")x" + m.item().getAmount() + "],";
         }
         return l.substring(0, l.length() - 1);
     }
@@ -109,20 +107,20 @@ public class UpdateDatabase extends Thread {
     public void playerLogic(Player player) {
         try {
             ResultSet r;
-            if(!this.plugin.MYSQLDB.checkConnectionIsAlive(true)) {
-            	Main.log(Level.SEVERE, "MySQL Connection error..");
-            	return;
+
+            if (!this.plugin.MYSQLDB.checkConnectionIsAlive(true)) {
+                Main.log(Level.SEVERE, "MySQL Connection error..");
+                return;
             }
             if (!this.plugin.MYSQLDB.tableExist(this.plugin.dbTable)) {
-            	Main.log(Level.SEVERE, "Table has suddenly disappear, disabling plugin...");
-            	this.plugin.Disable();
-            	return;
+                Main.log(Level.SEVERE, "Table has suddenly disappear, disabling plugin...");
+                this.plugin.Disable();
+                return;
             	
             }
             r = this.plugin.MYSQLDB.query(
                     "SELECT * FROM `" + this.plugin.dbTable
-                    + "` WHERE LOWER(`owner`) =LOWER('" + player.getName()
-                    + "');");
+                    + "` WHERE LOWER(`owner`) = LOWER('" + player.getName() + "');");
 			
             if (r.first()) {
                 List<ActionStack> fullInv = new ArrayList<ActionStack>();
@@ -140,35 +138,33 @@ public class UpdateDatabase extends Thread {
                             } else {
                                 player.getInventory().setItem(empty, i.item());
                                                         
-                                Main.log(Level.FINER, "\t" +
-                                        player.getName() + " : " + i.params()
+                                Main.log(Level.FINER,
+                                        "\t" + player.getName() + " : " + i.params()
                                         + " => " + i.item().getType().toString());
                             }
 								
                         } else if ("-".equals(i.params())) {
-                            if (player.getInventory().contains(
-                                    i.item().getType())) {
-                                HashMap<Integer, ItemStack> m = player.getInventory().removeItem(i.item());
+                            if (player.getInventory().contains(i.item().getType())) {
+                                HashMap<Integer, ItemStack> m = player.getInventory().removeItem(
+                                        i.item());
                                 Set<Integer> cles = m.keySet();
                                 Iterator<Integer> it = cles.iterator();
 
                                 while (it.hasNext()) {
-                                    int key = Integer.parseInt(
-                                            it.next().toString()); 
+                                    int key = Integer.parseInt(it.next().toString()); 
 
                                     fullInv.add(new ActionStack(m.get(key), "-"));
                                 }                                                                        
-                                Main.log(Level.FINER, "\t" +
-                                        player.getName() + " : " + i.params()
+                                Main.log(Level.FINER,
+                                        "\t" + player.getName() + " : " + i.params()
                                         + " => " + i.item().getType().toString());
                             } else {
                                 fullInv.add(i);
                             }
                         } else {
                             Main.log(Level.INFO,
-                                    "bad command '" + i.params()
-                                    + "' for player '" + player.getName()
-                                    + "' in pendings data, ignored");
+                                    "bad command '" + i.params() + "' for player '"
+                                    + player.getName() + "' in pendings data, ignored");
                         }
 						
                     }
@@ -176,11 +172,13 @@ public class UpdateDatabase extends Thread {
 				
                 String invData = buildInvString(player.getInventory());
 
-                Main.log(Level.FINE, "\t Unable to add/remove " + fullInv.size() + " item(s)");
+                if (fullInv.size() != 0) {
+                    Main.log(Level.FINE,
+                            "\t Unable to add/remove " + fullInv.size() + " item(s)");
+                }
                 this.plugin.MYSQLDB.queryUpdate(
-                        "UPDATE `" + this.plugin.dbTable
-                        + "` SET `inventory` = '" + invData
-                        + "', `pendings` = '"
+                        "UPDATE `" + this.plugin.dbTable + "` SET `inventory` = '"
+                        + invData + "', `pendings` = '"
                         + (fullInv.isEmpty() ? "" : buildPendString(fullInv))
                         + "' WHERE `id`=" + r.getInt("id"));
             } else {
@@ -188,7 +186,7 @@ public class UpdateDatabase extends Thread {
 
                 this.plugin.MYSQLDB.queryUpdate(
                         "INSERT INTO `" + this.plugin.dbTable
-                        + "`(`id`, `owner`, `inventory`, `pendings`) VALUES (null,'"
+                        + "`(`id`, `owner`, `inventory`, `pendings`, `x`, `y`, `z`) VALUES (null,'"
                         + player.getName() + "','" + invData + "','')");
             }
         } catch (Exception ex) {
@@ -200,10 +198,9 @@ public class UpdateDatabase extends Thread {
     public void run() {
         if (this.playerUpdate) {
             for (Player p: this.plugin.getServer().getOnlinePlayers()) {
-            	playerLogic(p);
+                playerLogic(p);
             }
             
-
         } else {
             for (Player p: this.plugin.getServer().getOnlinePlayers()) {
                 playerLogic(p);
