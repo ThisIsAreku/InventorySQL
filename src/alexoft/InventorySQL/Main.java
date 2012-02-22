@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -73,7 +74,7 @@ public class Main extends JavaPlugin {
     public void onDisable() {
         log("Disabling...");
         this.getServer().getScheduler().cancelTasks(this);
-        this.invokeCheck(false);
+        this.invokeCheck(false, null);
 
         log("Disabled !");
     }
@@ -241,29 +242,29 @@ public class Main extends JavaPlugin {
         this.getConfig().save(cfgFile);
     }
 
-    private void updateUser(Player[] players, boolean async, int delay) {
+    private void updateUser(Player[] players, boolean async, int delay, CommandSender cs) {
         if (async) {
             this.getServer().getScheduler().scheduleAsyncDelayedTask(this,
-                    new UpdateDatabase(this, true, players), delay * 20);
+                    new UpdateDatabase(this, true, players, cs), delay * 20);
         } else {
             this.getServer().getScheduler().scheduleSyncDelayedTask(this,
-                    new UpdateDatabase(this, true, players), delay * 20);
+                    new UpdateDatabase(this, true, players, cs), delay * 20);
         }
     }
 
-    public void invokeCheck(boolean async) {
-        updateUser(this.getServer().getOnlinePlayers(), async, 5);
+    public void invokeCheck(boolean async, CommandSender cs) {
+        updateUser(this.getServer().getOnlinePlayers(), async, 5, cs);
     }
 
-    public void invokeCheck(Player[] players, boolean async) {
-        updateUser(players, async, 5);
+    public void invokeCheck(Player[] players, boolean async, CommandSender cs) {
+        updateUser(players, async, 5, cs);
     }
 
-    public void invokeCheck(boolean async, int delay) {
-        updateUser(this.getServer().getOnlinePlayers(), async, delay);
+    public void invokeCheck(boolean async, int delay, CommandSender cs) {
+        updateUser(this.getServer().getOnlinePlayers(), async, delay, cs);
     }
 
-    public void invokeCheck(Player[] players, boolean async, int delay) {
-        updateUser(players, async, delay);
+    public void invokeCheck(Player[] players, boolean async, int delay, CommandSender cs) {
+        updateUser(players, async, delay, cs);
     }
 }

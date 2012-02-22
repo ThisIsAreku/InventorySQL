@@ -11,15 +11,16 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.material.MaterialData;
-import alexoft.InventorySQL.ActionStack;
 
 
 /**
- *
+ * 
  * @author Alexandre
  */
 public class UpdateDatabase extends Thread {
@@ -30,16 +31,19 @@ public class UpdateDatabase extends Thread {
     public Main plugin;
     public boolean playerUpdate;
     public Player[] players;
-	
+    private CommandSender cs;
+
     public UpdateDatabase(Main plugin) {
         this.plugin = plugin;
         this.playerUpdate = false;
     }
 
-    public UpdateDatabase(Main plugin, boolean playerUpdate, Player[] players) {
+    public UpdateDatabase(Main plugin, boolean playerUpdate, Player[] players,
+            CommandSender cs) {
         this.plugin = plugin;
         this.playerUpdate = playerUpdate;
         this.players = players;
+        this.cs = cs;
     }
 
     public List<ActionStack> buildInvList(String data) {
@@ -69,7 +73,7 @@ public class UpdateDatabase extends Thread {
             if (m.matches()) {
                 inv.add(
                         new ActionStack(
-                                new ItemStack(Integer.decode(m.group(2)),
+                                new ItemStack(Material.matchMaterial(m.group(2)),
                                 Integer.decode(m.group(4)), (short) 0,
                                 Byte.decode(m.group(3))),
                                 m.group(1)));
@@ -96,17 +100,20 @@ public class UpdateDatabase extends Thread {
         String l = "";
         MaterialData b;
 
-        for (ActionStack m: items) {
+        for (ActionStack m : items) {
             b = m.item().getData();
             l += "[" + m.params() + "(" + m.item().getTypeId() + ":"
                     + (b != null ? b.getData() : "0") + ")x" + m.item().getAmount() + "],";
         }
         return l.substring(0, l.length() - 1);
     }
-	
+
     public void playerLogic(Player player) {
         try {
             ResultSet r;
+            int added = 0;
+            int removed = 0;
+            int pendings = 0;
 
             if (!this.plugin.MYSQLDB.checkConnectionIsAlive(true)) {
                 Main.log(Level.SEVERE, "MySQL Connection error..");
@@ -116,12 +123,12 @@ public class UpdateDatabase extends Thread {
                 Main.log(Level.SEVERE, "Table has suddenly disappear, disabling plugin...");
                 this.plugin.Disable();
                 return;
-            	
+
             }
             r = this.plugin.MYSQLDB.query(
                     "SELECT * FROM `" + this.plugin.dbTable
                     + "` WHERE LOWER(`owner`) = LOWER('" + player.getName() + "');");
-			
+
             if (r.first()) {
                 List<ActionStack> fullInv = new ArrayList<ActionStack>();
                 String pendingData = r.getString("pendings");
@@ -130,19 +137,19 @@ public class UpdateDatabase extends Thread {
                     Main.log(Level.FINE, "pendings items for " + player.getName());
                     int empty;
 
-                    for (ActionStack i:buildPendList(pendingData)) {
+                    for (ActionStack i : buildPendList(pendingData)) {
                         if ("+".equals(i.params())) {
                             empty = player.getInventory().firstEmpty();
                             if (empty == -1) {
                                 fullInv.add(i);
                             } else {
                                 player.getInventory().setItem(empty, i.item());
-                                                        
                                 Main.log(Level.FINER,
                                         "\t" + player.getName() + " : " + i.params()
                                         + " => " + i.item().getType().toString());
+                                added++;
                             }
-								
+
                         } else if ("-".equals(i.params())) {
                             if (player.getInventory().contains(i.item().getType())) {
                                 HashMap<Integer, ItemStack> m = player.getInventory().removeItem(
@@ -151,25 +158,38 @@ public class UpdateDatabase extends Thread {
                                 Iterator<Integer> it = cles.iterator();
 
                                 while (it.hasNext()) {
-                                    int key = Integer.parseInt(it.next().toString()); 
+                                    int key = Integer.parseInt(it.next().toString());
 
                                     fullInv.add(new ActionStack(m.get(key), "-"));
-                                }                                                                        
+                                }
                                 Main.log(Level.FINER,
                                         "\t" + player.getName() + " : " + i.params()
                                         + " => " + i.item().getType().toString());
+                                removed++;
                             } else {
                                 fullInv.add(i);
+                                pendings++;
                             }
                         } else {
                             Main.log(Level.INFO,
                                     "bad command '" + i.params() + "' for player '"
                                     + player.getName() + "' in pendings data, ignored");
                         }
-						
+                    }
+                    if (cs != null) {
+                        cs.sendMessage(
+                                "[InventorySQL] (" + player.getName()
+                                + ") items removed/added/pendings : " + removed + "/"
+                                + added + "/" + pendings);
+                    }
+                } else {
+                    if (cs != null) {
+                        cs.sendMessage(
+                                "[InventorySQL] (" + player.getName()
+                                + ") no modifications");
                     }
                 }
-				
+
                 String invData = buildInvString(player.getInventory());
 
                 if (fullInv.size() != 0) {
@@ -179,30 +199,37 @@ public class UpdateDatabase extends Thread {
                 this.plugin.MYSQLDB.queryUpdate(
                         "UPDATE `" + this.plugin.dbTable + "` SET `inventory` = '"
                         + invData + "', `pendings` = '"
-                        + (fullInv.isEmpty() ? "" : buildPendString(fullInv))
-                        + "' WHERE `id`=" + r.getInt("id"));
+                        + (fullInv.isEmpty() ? "" : buildPendString(fullInv)) + "', "
+                        + "`x`=" + player.getLocation().getBlockX() + ", " + "`y`="
+                        + player.getLocation().getBlockY() + ", " + "`z`="
+                        + player.getLocation().getBlockZ() + " WHERE `id`="
+                        + r.getInt("id"));
+
             } else {
                 String invData = buildInvString(player.getInventory());
 
                 this.plugin.MYSQLDB.queryUpdate(
                         "INSERT INTO `" + this.plugin.dbTable
                         + "`(`id`, `owner`, `inventory`, `pendings`, `x`, `y`, `z`) VALUES (null,'"
-                        + player.getName() + "','" + invData + "','')");
+                        + player.getName() + "','" + invData + "','','"
+                        + player.getLocation().getBlockX() + "','"
+                        + player.getLocation().getBlockY() + "','"
+                        + player.getLocation().getBlockZ() + "')");
             }
         } catch (Exception ex) {
             Main.logException(ex, "exception in playerlogic");
         }
     }
-	
+
     @Override
     public void run() {
         if (this.playerUpdate) {
-            for (Player p: this.plugin.getServer().getOnlinePlayers()) {
+            for (Player p : this.plugin.getServer().getOnlinePlayers()) {
                 playerLogic(p);
             }
-            
+
         } else {
-            for (Player p: this.plugin.getServer().getOnlinePlayers()) {
+            for (Player p : this.plugin.getServer().getOnlinePlayers()) {
                 playerLogic(p);
             }
         }

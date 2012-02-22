@@ -24,17 +24,17 @@ public class InventorySQLPlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerDropItem(PlayerDropItemEvent event) {
-        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true);
+        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true, null);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerPickupItem(PlayerPickupItemEvent event) {
-        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true);
+        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true, null);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true);
+        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true, null);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -46,7 +46,7 @@ public class InventorySQLPlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true, 10);
+        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true, 10, null);
         // InventorySQLTable inv =
         // plugin.getDatabase().find(InventorySQLTable.class).where().ieq("player",
         /*

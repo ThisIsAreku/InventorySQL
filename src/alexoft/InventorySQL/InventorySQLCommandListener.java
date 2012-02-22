@@ -43,7 +43,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
             if (args.length >= 2) {
                 if ("all".equals(args[1])) {
                     sendMessage(cs, ChatColor.GREEN + "Checking all players...");
-                    this.plugin.invokeCheck(true);
+                    this.plugin.invokeCheck(true, null);
                     return true;
                 }
                 Player pT;
@@ -58,16 +58,18 @@ public class InventorySQLCommandListener implements CommandExecutor {
                 if (p.size() > 0) {
                     sendMessage(cs,
                             ChatColor.GREEN + "Checking " + p.size() + " player(s)...");
-                    this.plugin.invokeCheck(p.toArray(new Player[] {}), true);
+                    this.plugin.invokeCheck(p.toArray(new Player[] {}), true, null);
                 } else {
                     sendMessage(cs,
                             ChatColor.GREEN + "None of these players were online..");
                 }
             } else {
-                sendMessage(cs, ChatColor.RED + "You cannot check yourself as a Console !");
-                if (!isNotPlayer) {
+                if (isNotPlayer) {
+                    sendMessage(cs,
+                            ChatColor.RED + "You cannot check yourself as a Console !");
+                } else {
                     sendMessage(cs, ChatColor.GREEN + "Checking yourself...");
-                    this.plugin.invokeCheck(new Player[] { (Player) cs }, true);
+                    this.plugin.invokeCheck(new Player[] { (Player) cs }, true, cs);
                 }
             }
             return true;
