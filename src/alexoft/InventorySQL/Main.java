@@ -148,13 +148,14 @@ public class Main extends JavaPlugin {
                     + "`ischest` tinyint(1) NOT NULL DEFAULT '0',"
                     + "`x` int(11) NOT NULL DEFAULT '0',"
                     + "`y` tinyint(3) unsigned NOT NULL DEFAULT '0',"
-                    + "`z` int(11) NOT NULL DEFAULT '0'," + "`inventory` longtext,"
+                    + "`z` int(11) NOT NULL DEFAULT '0',"
+                    + "`inventory` longtext,"
                     + "`pendings` longtext, PRIMARY KEY (`id`))"
                     + "ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
             if (!this.MYSQLDB.tableExist(this.dbTable)) {
                 log("Creating table...");
-                if (!this.MYSQLDB.queryBool(query)) {
+                if (this.MYSQLDB.queryUpdate(query) != 0) {
                     log(Level.SEVERE, "Cannot create table, check your config !");
                 }
             } else {
@@ -164,9 +165,10 @@ public class Main extends JavaPlugin {
                 if (metadata.getColumnCount() != MYSQL_FIELDS.length) {
                     log("table is an old version, updating...");
                     if (!this.MYSQLDB.queryBool(query)) {
-                        log(Level.SEVERE, "Cannot create table, check your config !");
+                        log(Level.SEVERE, "Cannot update table, check your config !");
                     }
                 }
+                rs.close();
             }
         } catch (Exception ex) {
             Main.logException(ex, "table need update?");
