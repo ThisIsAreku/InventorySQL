@@ -4,9 +4,11 @@ package alexoft.InventorySQL;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +38,7 @@ public class Main extends JavaPlugin {
     public Boolean MySQL = true;
 
     public static String[] MYSQL_FIELDS = new String[] {
-        "id", "owner", "ischest", "x", "y", "z", "inventory", "pendings" };
+        "id", "owner", "ischest", "x", "y", "z", "inventory", "pendings", "last_update" };
 
     public static void log(Level level, String m) {
         if (level == Level.WARNING && verbosity < 2) {
@@ -126,6 +128,9 @@ public class Main extends JavaPlugin {
 
         this.getServer().getScheduler().scheduleAsyncRepeatingTask(this,
                 new UpdateDatabase(this), 10 * 20, this.delayCheck);
+        
+        startMetrics();
+        
         log("Enabled !");
 
         // debug code to pring pretty-formated ids
@@ -135,6 +140,17 @@ public class Main extends JavaPlugin {
          * m.getId() + "] = '" + m.toString() + "';"); }
          */
     }
+    
+    public void startMetrics(){
+
+        try {
+            log("Starting Metrics");
+            Metrics metrics = new Metrics();
+            metrics.beginMeasuringPlugin(this);
+        } catch (IOException e) {
+            log("Cannot start Metrics...");
+        }
+    }
 
     public void Disable() {
         this.getPluginLoader().disablePlugin(this);
@@ -142,16 +158,13 @@ public class Main extends JavaPlugin {
 
     public void checkUpdateTable() {
         try {
-            String query = "CREATE TABLE `" + this.dbTable
-                    + "` (`id` INT NOT NULL AUTO_INCREMENT,"
-                    + "`owner` VARCHAR(32) NOT NULL,"
-                    + "`ischest` tinyint(1) NOT NULL DEFAULT '0',"
-                    + "`x` int(11) NOT NULL DEFAULT '0',"
-                    + "`y` tinyint(3) unsigned NOT NULL DEFAULT '0',"
-                    + "`z` int(11) NOT NULL DEFAULT '0',"
-                    + "`inventory` longtext,"
-                    + "`pendings` longtext, PRIMARY KEY (`id`))"
-                    + "ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+        	InputStream is = this.getResource("alexoft/InventorySQL/schema.sql");
+        	Scanner reader = new Scanner(is);
+        	String query = "";
+			while(reader.hasNextLine()) {
+				query += " "+reader.nextLine();
+			}
+			query = query.replace("%%TABLENAME%%", this.dbTable);
 
             if (!this.MYSQLDB.tableExist(this.dbTable)) {
                 log("Creating table...");
@@ -164,7 +177,7 @@ public class Main extends JavaPlugin {
 
                 if (metadata.getColumnCount() != MYSQL_FIELDS.length) {
                     log("table is an old version, updating...");
-                    if (!this.MYSQLDB.queryBool(query)) {
+                    if (!((this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";") != 0) && (this.MYSQLDB.queryUpdate(query) != 0))) {
                         log(Level.SEVERE, "Cannot update table, check your config !");
                     }
                 }

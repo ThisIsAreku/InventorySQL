@@ -21,14 +21,18 @@ public class InventorySQLPlayerListener implements Listener {
             Main.logException(e, "Listener init");
         }
     }
-
-    @EventHandler(priority = EventPriority.HIGH)
+    
+    
+    
+    @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerDropItem(PlayerDropItemEvent event) {
+    	//Main.log("onPlayerDropItem");
         this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true, null);
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerPickupItem(PlayerPickupItemEvent event) {
+    	//Main.log("onPlayerPickupItem");
         this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true, null);
     }
 
@@ -41,8 +45,11 @@ public class InventorySQLPlayerListener implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {// TODO Auto-generated method stub
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onBlockPlace(BlockPlaceEvent event) {}
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onBlockPlace(BlockPlaceEvent event) {
+    	//Main.log("onBlockPlace");
+        this.plugin.invokeCheck(new Player[] { event.getPlayer()}, true, null);
+        }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerJoin(PlayerJoinEvent event) {
