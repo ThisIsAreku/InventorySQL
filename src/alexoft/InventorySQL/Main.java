@@ -55,6 +55,7 @@ public class Main extends JavaPlugin {
     }
 
     public static void logException(Exception e, String m) {
+        if (e instanceof EmptyException) return;
         log(Level.SEVERE, "---------------------------------------");
         log(Level.SEVERE, "--- an unexpected error has occured ---");
         log(Level.SEVERE, "-- please send line below to the dev --");
@@ -177,7 +178,8 @@ public class Main extends JavaPlugin {
 
                 if (metadata.getColumnCount() != MYSQL_FIELDS.length) {
                     log("table is an old version, updating...");
-                    if (!((this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";") != 0) && (this.MYSQLDB.queryUpdate(query) != 0))) {
+                    this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";");
+                    if (this.MYSQLDB.queryUpdate(query) != 0) {
                         log(Level.SEVERE, "Cannot update table, check your config !");
                     }
                 }

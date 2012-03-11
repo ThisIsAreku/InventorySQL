@@ -24,7 +24,7 @@ import org.bukkit.material.MaterialData;
  */
 public class UpdateDatabase extends Thread {
 	public static Pattern pInventory = Pattern
-			.compile("\\[([0-9]{1,2})\\(([0-9]{1,3}):([0-9]{1,2})(\\|[0-9=,]*?)?\\)x(-?[0-9]{1,2})\\]");
+			.compile("\\[([0-9]{1,2})\\(([0-9]{1,3}):([0-9]{1,2})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
 	public static Pattern pPendings = Pattern
 			.compile("\\[(-|\\+)?\\(([0-9]{1,3}):([0-9]{1,2})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
 	public Main plugin;
@@ -220,18 +220,17 @@ public class UpdateDatabase extends Thread {
 				String invData = buildInvString(player.getInventory());
 
 				if (fullInv.size() != 0) {
-					Main.log(Level.WARNING,
-							"\t Unable to add/remove " + fullInv.size()
-									+ " item(s)");
+					Main.log(Level.WARNING, "\t Unable to add/remove "
+							+ fullInv.size() + " item(s)");
 				}
 				this.plugin.MYSQLDB.queryUpdate("UPDATE `"
 						+ this.plugin.dbTable + "` SET `inventory` = '"
 						+ invData + "', `pendings` = '"
 						+ (fullInv.isEmpty() ? "" : buildPendString(fullInv))
-						+ "', " + "`x`=" + player.getLocation().getBlockX()
-						+ ", " + "`y`=" + player.getLocation().getBlockY()
-						+ ", " + "`z`=" + player.getLocation().getBlockZ()
-						+ " WHERE `id`=" + r.getInt("id"));
+						+ "', " + "`x`= '" + player.getLocation().getBlockX()
+						+ "', " + "`y`= '" + player.getLocation().getBlockY()
+						+ "', " + "`z`= '" + player.getLocation().getBlockZ()
+						+ "' WHERE `id`= '" + r.getInt("id") + "';");
 
 			} else {
 				String invData = buildInvString(player.getInventory());
