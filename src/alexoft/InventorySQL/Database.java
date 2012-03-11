@@ -66,7 +66,7 @@ public class Database {
 
 	public int queryUpdate(String sql) throws EmptyException {
 		try {
-			Main.log(sql);
+			//Main.log(sql);
 			return conn.createStatement().executeUpdate(sql);
 		} catch (SQLException ex) {
 			Main.logException(ex, "R: " + sql);

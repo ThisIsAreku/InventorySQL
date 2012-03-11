@@ -145,7 +145,17 @@ public class UpdateDatabase extends Thread {
 			int added = 0;
 			int removed = 0;
 			int pendings = 0;
-
+			
+			if (this.plugin == null) {
+				Main.logException(new NullPointerException("Parent is null.."), "this.plugin");
+				this.plugin.Disable();
+				return;
+			}			
+			if (this.plugin.MYSQLDB == null) {
+				Main.logException(new NullPointerException("MYSQLDB is null.."), "this.plugin.MYSQLDB");
+				this.plugin.Disable();
+				return;
+			}
 			if (!this.plugin.MYSQLDB.checkConnectionIsAlive(true)) {
 				Main.log(Level.SEVERE, "MySQL Connection error..");
 				return;
@@ -252,7 +262,7 @@ public class UpdateDatabase extends Thread {
 	@Override
 	public void run() {
 		if (this.playerUpdate) {
-			for (Player p : this.plugin.getServer().getOnlinePlayers()) {
+			for (Player p : this.players) {
 				playerLogic(p);
 			}
 
