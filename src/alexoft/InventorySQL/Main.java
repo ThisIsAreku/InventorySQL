@@ -105,7 +105,7 @@ public class Main extends JavaPlugin {
         }
         try {
             MYSQLDB = new Database(
-                    "jdbc:mysql://" + this.dbHost + ":3306/" + this.dbDatabase,
+                    "jdbc:mysql://" + this.dbHost + "/" + this.dbDatabase,
                     this.dbUser, this.dbPass);
 
             log("MySQL connection successful");
