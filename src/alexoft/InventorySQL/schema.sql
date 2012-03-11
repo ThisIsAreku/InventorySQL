@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `%%TABLENAME%%` (
   `owner` varchar(32) NOT NULL,
   `ischest` tinyint(1) NOT NULL DEFAULT '0',
   `x` int(11) NOT NULL DEFAULT '0',
-  `y` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `y` int(11) unsigned NOT NULL DEFAULT '0',
   `z` int(11) NOT NULL DEFAULT '0',
   `inventory` longtext,
   `pendings` longtext,

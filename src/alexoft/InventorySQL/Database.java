@@ -91,4 +91,8 @@ public class Database {
 		return tables.next();
 	}
 
+	public DatabaseMetaData getMetaData() throws SQLException {
+		return conn.getMetaData();
+	}
+
 }

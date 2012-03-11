@@ -5,9 +5,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,6 +20,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
+
 
 
 @SuppressWarnings("unused")
@@ -37,8 +40,7 @@ public class Main extends JavaPlugin {
     public Database MYSQLDB;
     public Boolean MySQL = true;
 
-    public static String[] MYSQL_FIELDS = new String[] {
-        "id", "owner", "ischest", "x", "y", "z", "inventory", "pendings", "last_update" };
+    public static HashMap<String, String> MYSQL_FIELDS = new HashMap<String, String>();
 
     public static void log(Level level, String m) {
         if (level == Level.WARNING && verbosity < 2) {
@@ -72,12 +74,24 @@ public class Main extends JavaPlugin {
         }
         log(Level.SEVERE, "---------------------------------------");
     }
+    
+    private static void populateHashMap(){
+    	MYSQL_FIELDS.put("id", "INT");
+    	MYSQL_FIELDS.put("owner", "VARCHAR");
+    	MYSQL_FIELDS.put("ischest", "BIT");
+    	MYSQL_FIELDS.put("x", "INT");
+    	MYSQL_FIELDS.put("y", "INT UNSIGNED");
+    	MYSQL_FIELDS.put("z", "INT");
+    	MYSQL_FIELDS.put("inventory", "LONGTEXT");
+    	MYSQL_FIELDS.put("pendings", "LONGTEXT");
+    	MYSQL_FIELDS.put("last_update", "TIMESTAMP");
+    }
 
     @Override
     public void onDisable() {
         log("Disabling...");
         this.getServer().getScheduler().cancelTasks(this);
-        this.invokeCheck(false, null);
+        //this.invokeCheck(false, null);
 
         log("Disabled !");
     }
@@ -90,6 +104,8 @@ public class Main extends JavaPlugin {
         log("ThisIsAreku present INVENTORYSQL, v" + p_version);
         log("Enabling...");
 
+        populateHashMap();
+        
         try {
             this.loadConfig();
         } catch (Exception e) {
@@ -176,11 +192,27 @@ public class Main extends JavaPlugin {
                 ResultSet rs = this.MYSQLDB.query("SELECT * FROM `" + this.dbTable + "`");
                 ResultSetMetaData metadata = rs.getMetaData();
 
-                if (metadata.getColumnCount() != MYSQL_FIELDS.length) {
+                if (metadata.getColumnCount() != MYSQL_FIELDS.size()) {
                     log("table is an old version, updating...");
                     this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";");
                     if (this.MYSQLDB.queryUpdate(query) != 0) {
                         log(Level.SEVERE, "Cannot update table, check your config !");
+                    }
+                }else{
+                	DatabaseMetaData meta = this.MYSQLDB.getMetaData();
+                    ResultSet rsColumns = meta.getColumns(null, null, this.dbTable, null);
+                    while (rsColumns.next()) {
+                      String columnName = rsColumns.getString("COLUMN_NAME");
+                      String columnType = rsColumns.getString("TYPE_NAME");
+                      int size = rsColumns.getInt("COLUMN_SIZE");
+                      if(MYSQL_FIELDS.get(columnName) != columnType){
+                          log("table is an old version, updating...");
+                          this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";");
+                          if (this.MYSQLDB.queryUpdate(query) != 0) {
+                              log(Level.SEVERE, "Cannot update table, check your config !");
+                          }
+                    	  break;
+                      }
                     }
                 }
                 rs.close();
