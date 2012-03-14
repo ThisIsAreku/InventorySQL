@@ -1,7 +1,8 @@
 name: InventorySQL
 main: alexoft.InventorySQL.Main
 author: ThisIsAreku
-version: 0.6.4
+website: http://alexoft.x10.mx/
+version: 0.6.5
 description: Sync your inventory on MySQL
 commands:
     invSQL:

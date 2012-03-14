@@ -101,7 +101,8 @@ public class Main extends JavaPlugin {
         l = this.getLogger();
         b_version = this.getServer().getVersion();
         p_version = this.getDescription().getVersion();
-        log("ThisIsAreku present INVENTORYSQL, v" + p_version);
+        log("ThisIsAreku present " + this.getDescription().getName().toUpperCase() + ", v" + p_version);
+        log("= " + this.getDescription().getWebsite() + " =");
         log("Enabling...");
 
         populateHashMap();
