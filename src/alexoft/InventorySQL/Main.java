@@ -26,7 +26,6 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
 
-
 @SuppressWarnings("unused")
 public class Main extends JavaPlugin {
 	public static Main instance;
@@ -155,6 +154,7 @@ public class Main extends JavaPlugin {
                 new UpdateDatabase(this), 10 * 20, this.delayCheck);
         
         startMetrics();
+        startUpdate();
         
         log("Enabled !");
 
@@ -176,6 +176,12 @@ public class Main extends JavaPlugin {
             log("Cannot start Metrics...");
         }
     }
+
+	public void startUpdate() {
+		//log("Checking update");
+		UpdateChecker update = new UpdateChecker(this);
+		update.start();
+	}
 
     public void Disable() {
         this.getPluginLoader().disablePlugin(this);
