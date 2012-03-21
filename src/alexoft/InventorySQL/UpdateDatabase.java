@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -216,14 +217,13 @@ public class UpdateDatabase extends Thread {
 						}
 					}
 					if (cs != null) {
-						cs.sendMessage("[InventorySQL] (" + player.getName()
-								+ ") items removed/added/pendings : " + removed
-								+ "/" + added + "/" + pendings);
+						cs.sendMessage("[InventorySQL] " + ChatColor.GREEN + "(" + player.getName()
+								+ ") " + Main.getMessage("modif", removed, added, pendings));
 					}
 				} else {
 					if (cs != null) {
-						cs.sendMessage("[InventorySQL] (" + player.getName()
-								+ ") no modifications");
+						cs.sendMessage("[InventorySQL] " + ChatColor.GREEN + "(" + player.getName()
+								+ ") " + Main.getMessage("no-modif"));
 					}
 				}
 

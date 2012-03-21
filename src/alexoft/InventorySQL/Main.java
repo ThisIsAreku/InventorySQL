@@ -3,13 +3,16 @@ package alexoft.InventorySQL;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,6 +20,7 @@ import java.util.logging.Logger;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,9 +29,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 @SuppressWarnings("unused")
 public class Main extends JavaPlugin {
-    public static Logger l;
-    public static String p_version;
-    public static String b_version;
+	public static Main instance;
     public String dbDatabase = null;
     public String dbHost = null;
     public String dbPass = null;
@@ -40,7 +42,7 @@ public class Main extends JavaPlugin {
     public Database MYSQLDB;
     public Boolean MySQL = true;
 
-    public static HashMap<String, String> MYSQL_FIELDS = new HashMap<String, String>();
+    public static HashMap<String, String> MYSQL_FIELDS_TYPE = new HashMap<String, String>();
 
     public static void log(Level level, String m) {
         if (level == Level.WARNING && verbosity < 2) {
@@ -49,7 +51,7 @@ public class Main extends JavaPlugin {
         if (level == Level.INFO && verbosity < 1) {
             return;
         }
-        l.log(level, m);
+        instance.getLogger().log(level, m);
     }
 
     public static void log(String m) {
@@ -61,8 +63,8 @@ public class Main extends JavaPlugin {
         log(Level.SEVERE, "---------------------------------------");
         log(Level.SEVERE, "--- an unexpected error has occured ---");
         log(Level.SEVERE, "-- please send line below to the dev --");
-        log(Level.SEVERE, "InventorySQL version " + p_version);
-        log(Level.SEVERE, "Bukkit version " + b_version);
+        log(Level.SEVERE, "InventorySQL version " + instance.getDescription().getVersion());
+        log(Level.SEVERE, "Bukkit version " + instance.getServer().getVersion());
         log(Level.SEVERE, "Message: " + m);
         if (e instanceof SQLException) {
             log(Level.SEVERE, "SQLState: " + ((SQLException) e).getSQLState());
@@ -76,20 +78,26 @@ public class Main extends JavaPlugin {
     }
     
     private static void populateHashMap(){
-    	MYSQL_FIELDS.put("id", "INT");
-    	MYSQL_FIELDS.put("owner", "VARCHAR");
-    	MYSQL_FIELDS.put("ischest", "BIT");
-    	MYSQL_FIELDS.put("x", "INT");
-    	MYSQL_FIELDS.put("y", "INT UNSIGNED");
-    	MYSQL_FIELDS.put("z", "INT");
-    	MYSQL_FIELDS.put("inventory", "LONGTEXT");
-    	MYSQL_FIELDS.put("pendings", "LONGTEXT");
-    	MYSQL_FIELDS.put("last_update", "TIMESTAMP");
+    	MYSQL_FIELDS_TYPE.clear();    	
+    	
+    	MYSQL_FIELDS_TYPE.put("id", "INT");
+    	MYSQL_FIELDS_TYPE.put("owner", "VARCHAR");
+    	MYSQL_FIELDS_TYPE.put("ischest", "BIT");
+    	MYSQL_FIELDS_TYPE.put("x", "INT");
+    	MYSQL_FIELDS_TYPE.put("y", "INT UNSIGNED");
+    	MYSQL_FIELDS_TYPE.put("z", "INT");
+    	MYSQL_FIELDS_TYPE.put("inventory", "LONGTEXT");
+    	MYSQL_FIELDS_TYPE.put("pendings", "LONGTEXT");
+    	MYSQL_FIELDS_TYPE.put("last_update", "TIMESTAMP");
+    }
+    
+    public static String getMessage(String k, Object... format){
+    	return String.format(instance.getConfig().getString("messages."+k), format);
     }
 
     @Override
     public void onDisable() {
-        log("Disabling...");
+        //log("Disabling...");
         this.getServer().getScheduler().cancelTasks(this);
         //this.invokeCheck(false, null);
 
@@ -98,10 +106,8 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        l = this.getLogger();
-        b_version = this.getServer().getVersion();
-        p_version = this.getDescription().getVersion();
-        log("ThisIsAreku present " + this.getDescription().getName().toUpperCase() + ", v" + p_version);
+    	instance = this;
+        log("ThisIsAreku present " + this.getDescription().getName().toUpperCase() + ", v" + this.getDescription().getVersion());
         log("= " + this.getDescription().getWebsite() + " =");
         log("Enabling...");
 
@@ -110,7 +116,7 @@ public class Main extends JavaPlugin {
         try {
             this.loadConfig();
         } catch (Exception e) {
-            log("Unable to load config");
+        	logException(e, "Unable to load config");
             this.Disable();
             return;
         }
@@ -141,8 +147,9 @@ public class Main extends JavaPlugin {
 
         this.playerListener = new InventorySQLPlayerListener(this);
         this.commandListener = new InventorySQLCommandListener(this);
-
+        
         this.getCommand("invSQL").setExecutor(commandListener);
+        this.getCommand("ichk").setExecutor(commandListener);
 
         this.getServer().getScheduler().scheduleAsyncRepeatingTask(this,
                 new UpdateDatabase(this), 10 * 20, this.delayCheck);
@@ -163,8 +170,8 @@ public class Main extends JavaPlugin {
 
         try {
             log("Starting Metrics");
-            Metrics metrics = new Metrics();
-            metrics.beginMeasuringPlugin(this);
+            MetricsLite metrics = new MetricsLite(this);
+            metrics.start();
         } catch (IOException e) {
             log("Cannot start Metrics...");
         }
@@ -193,7 +200,7 @@ public class Main extends JavaPlugin {
                 ResultSet rs = this.MYSQLDB.query("SELECT * FROM `" + this.dbTable + "`");
                 ResultSetMetaData metadata = rs.getMetaData();
 
-                if (metadata.getColumnCount() != MYSQL_FIELDS.size()) {
+                if (metadata.getColumnCount() != MYSQL_FIELDS_TYPE.size()) {
                     log("table is an old version, updating...");
                     this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";");
                     if (this.MYSQLDB.queryUpdate(query) != 0) {
@@ -206,7 +213,7 @@ public class Main extends JavaPlugin {
                       String columnName = rsColumns.getString("COLUMN_NAME");
                       String columnType = rsColumns.getString("TYPE_NAME");
                       int size = rsColumns.getInt("COLUMN_SIZE");
-                      if(MYSQL_FIELDS.get(columnName) != columnType){
+                      if(!columnType.equalsIgnoreCase(MYSQL_FIELDS_TYPE.get(columnName))){
                           log("table is an old version, updating...");
                           this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";");
                           if (this.MYSQLDB.queryUpdate(query) != 0) {
@@ -225,71 +232,34 @@ public class Main extends JavaPlugin {
 
     public void loadConfig() throws FileNotFoundException, IOException,
                 InvalidConfigurationException {
-        File cfgDir = this.getDataFolder();
-        File cfgFile = new File(cfgDir + "/config.yml");
 
-        if (!cfgDir.exists()) {
-            cfgDir.mkdirs();
-        }
-        if (!cfgFile.exists()) {
-            try {
-                cfgFile.createNewFile();
-            } catch (IOException ex) {
-                Main.logException(ex, "creating config");
-            }
-        } else {
-            this.getConfig().load(cfgFile);
-        }
+		File file = new File(this.getDataFolder(), "config.yml");
+		if (!this.getDataFolder().exists())
+			this.getDataFolder().mkdirs();
+		if (!file.exists())
+			copy(this.getResource("config.yml"), file);
 
-        String tmp = String.valueOf(Math.random());
+		this.getConfig().load(file);
+
+		YamlConfiguration defaults = new YamlConfiguration();
+		defaults.load(this.getResource("config.yml"));
+		this.getConfig().addDefaults(defaults);
+		this.getConfig().options().copyDefaults(true);
+
 
         this.MySQL = true;
 
-        this.dbHost = this.getConfig().getString("mysql.host", "");
-        this.dbUser = this.getConfig().getString("mysql.user", "");
-        this.dbPass = this.getConfig().getString("mysql.pass", tmp);
-        this.dbDatabase = this.getConfig().getString("mysql.db", "");
-        this.dbTable = this.getConfig().getString("mysql.table", "");
-        this.delayCheck = this.getConfig().getInt("check-interval", -1);
-        Main.verbosity = this.getConfig().getInt("verbosity", -1);
+        this.dbHost = this.getConfig().getString("mysql.host");
+        this.dbUser = this.getConfig().getString("mysql.user");
+        this.dbPass = this.getConfig().getString("mysql.pass");
+        this.dbDatabase = this.getConfig().getString("mysql.db");
+        this.dbTable = this.getConfig().getString("mysql.table");
+        this.delayCheck = this.getConfig().getInt("check-interval");
+        Main.verbosity = this.getConfig().getInt("verbosity");
 
-        if (Main.verbosity == -1 || Main.verbosity > 2) {
-            log(Level.WARNING, "Creating 'verbosity' config...");
-            Main.verbosity = 2;
-            this.getConfig().set("verbosity", Main.verbosity);
-        }
-        if (this.delayCheck == -1) {
-            log(Level.WARNING, "Creating 'check-interval' config...");
-            this.delayCheck = 600;
-            this.getConfig().set("check-interval", this.delayCheck);
-        }
-        if (this.dbHost.equals("")) {
-            log(Level.WARNING, "Creating 'host' config...");
-            this.getConfig().set("mysql.host", "localhost");
-            this.MySQL = false;
-        }
-        if (this.dbUser.equals("")) {
-            log(Level.WARNING, "Creating 'user' config...");
-            this.getConfig().set("mysql.user", "root");
-            this.MySQL = false;
-        }
-        if (this.dbPass.equals(tmp)) {
-            log(Level.WARNING, "Creating 'pass' config...");
-            this.getConfig().set("mysql.pass", "pass");
-            this.MySQL = false;
-        }
-        if (this.dbDatabase.equals("")) {
-            log(Level.WARNING, "Creating 'db' config...");
-            this.getConfig().set("mysql.db", "minecraft");
-            this.MySQL = false;
-        }
-        if (this.dbTable.equals("")) {
-            log(Level.WARNING, "Creating 'table' config...");
-            this.getConfig().set("mysql.table", "InventorySQL");
-            this.MySQL = false;
-        }
+        
         this.delayCheck *= 20;
-        this.getConfig().save(cfgFile);
+        this.getConfig().save(file);
     }
 
     private void updateUser(Player[] players, boolean async, int delay, CommandSender cs) {
@@ -317,4 +287,17 @@ public class Main extends JavaPlugin {
     public void invokeCheck(Player[] players, boolean async, int delay, CommandSender cs) {
         updateUser(players, async, delay, cs);
     }
+
+	private void copy(InputStream src, File dst) throws IOException {
+		OutputStream out = new FileOutputStream(dst);
+
+		// Transfer bytes from in to out
+		byte[] buf = new byte[1024];
+		int len;
+		while ((len = src.read(buf)) > 0) {
+			out.write(buf, 0, len);
+		}
+		src.close();
+		out.close();
+	}
 }
