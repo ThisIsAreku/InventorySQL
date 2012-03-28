@@ -74,6 +74,13 @@ public class Database {
 		}
 	}
 
+	public void queryUpdateQuiet(String sql){
+		try {
+			conn.createStatement().executeUpdate(sql);
+		} catch (SQLException ex) {
+		}
+	}
+
 	public boolean queryBool(String sql) throws EmptyException {
 		try {
 			return conn.createStatement().execute(sql);

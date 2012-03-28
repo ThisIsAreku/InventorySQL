@@ -35,6 +35,19 @@ public class InventorySQLCommandListener implements CommandExecutor {
             }
             return true;
         }
+        if ("pw".equals(args[0]) && (!isNotPlayer)) {
+        	if (args.length != 2) {
+                sendMessage(cs, ChatColor.GREEN + "Usage :");
+                sendMessage(cs, ChatColor.GREEN + " * /invSQL pw <password> : change your password");
+                return true;
+        	}
+        	try {
+				this.plugin.MYSQLDB.queryUpdate("UPDATE `" + this.plugin.dbTable + "_users` SET `password`=MD5('" + args[1] + "') WHERE `name` = '"+ cs.getName() +"'");
+                sendMessage(cs, ChatColor.BLUE + "Password changed");
+			} catch (EmptyException e) {
+				sendMessage(cs, ChatColor.RED + "Unable to change password");
+			}
+        }
         if (!cs.isOp()) {
             sendMessage(cs, ChatColor.RED + "You cannot use this command");
             return true;

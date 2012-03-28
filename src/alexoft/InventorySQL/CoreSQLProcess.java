@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -23,22 +24,22 @@ import org.bukkit.material.MaterialData;
  * 
  * @author Alexandre
  */
-public class UpdateDatabase extends Thread {
+public class CoreSQLProcess extends Thread {
 	public static Pattern pInventory = Pattern
-			.compile("\\[([0-9]{1,2})\\(([0-9]{1,3}):([0-9]{1,2})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
+			.compile("\\[([0-9]{1,2})\\(([0-9]{1,4}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
 	public static Pattern pPendings = Pattern
-			.compile("\\[(-|\\+)?\\(([0-9]{1,3}):([0-9]{1,2})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
+			.compile("\\[(-|\\+)?\\(([0-9]{1,4}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
 	public Main plugin;
 	public boolean playerUpdate;
 	public Player[] players;
 	private CommandSender cs;
 
-	public UpdateDatabase(Main plugin) {
+	public CoreSQLProcess(Main plugin) {
 		this.plugin = plugin;
 		this.playerUpdate = false;
 	}
 
-	public UpdateDatabase(Main plugin, boolean playerUpdate, Player[] players,
+	public CoreSQLProcess(Main plugin, boolean playerUpdate, Player[] players,
 			CommandSender cs) {
 		this.plugin = plugin;
 		this.playerUpdate = playerUpdate;
@@ -147,6 +148,10 @@ public class UpdateDatabase extends Thread {
 			int removed = 0;
 			int pendings = 0;
 			
+			if ((this.plugin.no_creative) && (player.getGameMode() == GameMode.CREATIVE)) {
+				return;
+			}
+			
 			if (this.plugin == null) {
 				Main.logException(new NullPointerException("Parent is null.."), "this.plugin");
 				this.plugin.Disable();
@@ -166,11 +171,10 @@ public class UpdateDatabase extends Thread {
 						"Table has suddenly disappear, disabling plugin...");
 				this.plugin.Disable();
 				return;
-
 			}
 			r = this.plugin.MYSQLDB.query("SELECT * FROM `"
 					+ this.plugin.dbTable + "` WHERE LOWER(`owner`) = LOWER('"
-					+ player.getName() + "');");
+					+ player.getName() + "') AND `world` = '" + player.getWorld().getName() + "';");
 
 			if (r.first()) {
 				List<ActionStack> fullInv = new ArrayList<ActionStack>();
@@ -248,11 +252,14 @@ public class UpdateDatabase extends Thread {
 				this.plugin.MYSQLDB
 						.queryUpdate("INSERT INTO `"
 								+ this.plugin.dbTable
-								+ "`(`id`, `owner`, `inventory`, `pendings`, `x`, `y`, `z`) VALUES (null,'"
-								+ player.getName() + "','" + invData + "','','"
+								+ "`(`owner`, `world`, `inventory`, `pendings`, `x`, `y`, `z`) VALUES ('"
+								+ player.getName() + "','" + player.getWorld().getName() + "','" + invData + "','','"
 								+ player.getLocation().getBlockX() + "','"
 								+ player.getLocation().getBlockY() + "','"
 								+ player.getLocation().getBlockZ() + "')");
+				this.plugin.MYSQLDB
+				.queryUpdate("INSERT INTO `"
+						+ this.plugin.dbTable + "_users" + "`(`name`, `password`) VALUES ('" + player.getName() + "', '')");
 			}
 		} catch (Exception ex) {
 			Main.logException(ex, "exception in playerlogic");

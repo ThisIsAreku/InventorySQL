@@ -1,5 +1,7 @@
 verbosity: 2
 check-interval: 600
+check-plugin-updates: true
+no-creative: true
 mysql:
   host: localhost:3306
   user: root
