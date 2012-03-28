@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
@@ -375,6 +377,12 @@ public class Main extends JavaPlugin {
 		this.check_plugin_updates = this.getConfig().getBoolean(
 				"check-plugin-updates");
 		this.no_creative = this.getConfig().getBoolean("no-creative");
+		/*try{
+			CoreSQLProcess.pInventory = Pattern.compile(this.getConfig().getString("regex.inventory"));
+			CoreSQLProcess.pPendings = Pattern.compile(this.getConfig().getString("regex.pendings"));
+		}catch(PatternSyntaxException psE){
+			logException(psE, "Error in regex format, check the entry or delete to regenerate");
+		}*/
 
 		this.delayCheck *= 20;
 		this.getConfig().save(file);

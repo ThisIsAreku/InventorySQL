@@ -25,10 +25,8 @@ import org.bukkit.material.MaterialData;
  * @author Alexandre
  */
 public class CoreSQLProcess extends Thread {
-	public static Pattern pInventory = Pattern
-			.compile("\\[([0-9]{1,2})\\(([0-9]{1,4}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
-	public static Pattern pPendings = Pattern
-			.compile("\\[(-|\\+)?\\(([0-9]{1,4}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
+	public static Pattern pInventory = Pattern.compile("\\[([0-9]{1,2})\\(([0-9]{1,8}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
+	public static Pattern pPendings = Pattern.compile("\\[(-|\\+)?\\(([0-9]{1,8}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
 	public Main plugin;
 	public boolean playerUpdate;
 	public Player[] players;
