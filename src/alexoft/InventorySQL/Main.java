@@ -44,7 +44,8 @@ public class Main extends JavaPlugin {
 	private InventorySQLPlayerListener playerListener;
 	private InventorySQLCommandListener commandListener;
 	public Database MYSQLDB;
-	public Boolean MySQL = true;
+	public Boolean ready = true;
+	public int invsqlTask;
 
 	public static HashMap<String, String> MYSQL_FIELDS_TYPE = new HashMap<String, String>();
 	public static HashMap<String, String> MYSQL_USERS_FIELDS_TYPE = new HashMap<String, String>();
@@ -126,7 +127,6 @@ public class Main extends JavaPlugin {
 				+ this.getDescription().getName().toUpperCase() + ", v"
 				+ this.getDescription().getVersion());
 		log("= " + this.getDescription().getWebsite() + " =");
-		log("Enabling...");
 
 		populateHashMap();
 
@@ -134,49 +134,47 @@ public class Main extends JavaPlugin {
 			this.loadConfig();
 		} catch (Exception e) {
 			logException(e, "Unable to load config");
-			this.Disable();
-			return;
-		}
-
-		if (!this.MySQL) {
-			log(Level.SEVERE, "Configuration error, plugin disabled");
-			this.Disable();
-			return;
+			this.ready = false;
 		}
 		try {
-			MYSQLDB = new Database("jdbc:mysql://" + this.dbHost + "/"
-					+ this.dbDatabase, this.dbUser, this.dbPass);
+			if (this.ready) {
+				MYSQLDB = new Database("jdbc:mysql://" + this.dbHost + "/"
+						+ this.dbDatabase, this.dbUser, this.dbPass);
 
-			log("MySQL connection successful");
-			checkUpdateTable();
+				log("MySQL connection successful");
+				checkUpdateTable();
+			} else {
+				log(Level.SEVERE, "MySQL configuration error");
+			}
 		} catch (SQLException ex) {
 			Main.logException(ex, "mysql init");
 			log(Level.SEVERE, "MySQL connection failed");
-			this.Disable();
-			return;
+			this.ready = false;
 		} catch (ClassNotFoundException e) {
 			Main.logException(e, "mysql init");
 			log(Level.SEVERE, "MySQL connection failed");
-			this.Disable();
-			return;
+			this.ready = false;
 		}
 
+		if (!this.ready) {
+			log(Level.SEVERE, "check the config and use /invsql reload");
+		} else {
+
+			this.invsqlTask = this
+					.getServer()
+					.getScheduler()
+					.scheduleAsyncRepeatingTask(this, new CoreSQLProcess(this),
+							10 * 20, this.delayCheck);
+		}
 		this.playerListener = new InventorySQLPlayerListener(this);
 		this.commandListener = new InventorySQLCommandListener(this);
 
 		this.getCommand("invSQL").setExecutor(commandListener);
 		this.getCommand("ichk").setExecutor(commandListener);
-
-		this.getServer()
-		.getScheduler()
-		.scheduleAsyncRepeatingTask(this, new CoreSQLProcess(this),
-				10 * 20, this.delayCheck);
-
+		
 		startMetrics();
 		if (this.check_plugin_updates)
 			startUpdate();
-
-		log("Enabled !");
 
 		// debug code to pring pretty-formated ids
 		// used to update the webui
@@ -208,6 +206,48 @@ public class Main extends JavaPlugin {
 
 	public void Disable() {
 		this.getPluginLoader().disablePlugin(this);
+	}
+
+	public void reload() {
+		this.getServer().getScheduler().cancelTask(this.invsqlTask);
+		try {
+			this.loadConfig();
+		} catch (Exception e) {
+			logException(e, "Unable to load config");
+			this.ready = false;
+		}
+		try {
+			if (this.ready) {
+				MYSQLDB = new Database("jdbc:mysql://" + this.dbHost + "/"
+						+ this.dbDatabase, this.dbUser, this.dbPass);
+
+				log("MySQL connection successful");
+				checkUpdateTable();
+			} else {
+				log(Level.SEVERE, "MySQL configuration error");
+			}
+		} catch (SQLException ex) {
+			Main.logException(ex, "mysql init");
+			log(Level.SEVERE, "MySQL connection failed");
+			this.ready = false;
+		} catch (ClassNotFoundException e) {
+			Main.logException(e, "mysql init");
+			log(Level.SEVERE, "MySQL connection failed");
+			this.ready = false;
+		}
+
+		if (!this.ready) {
+			log(Level.SEVERE, "check the config and use /invsql reload");
+		} else {
+			this.playerListener = new InventorySQLPlayerListener(this);
+
+
+			this.invsqlTask = this
+					.getServer()
+					.getScheduler()
+					.scheduleAsyncRepeatingTask(this, new CoreSQLProcess(this),
+							10 * 20, this.delayCheck);
+		}
 	}
 
 	public void checkUpdateTable() {
@@ -246,8 +286,10 @@ public class Main extends JavaPlugin {
 						if (!columnType.equalsIgnoreCase(MYSQL_FIELDS_TYPE
 								.get(columnName))) {
 							log("Data table is an old version (fields not match, "
-									+ columnName + " => "
-									+ columnType + ":"
+									+ columnName
+									+ " => "
+									+ columnType
+									+ ":"
 									+ MYSQL_FIELDS_TYPE.get(columnName)
 									+ "), updating...");
 							update_table_fields();
@@ -292,8 +334,10 @@ public class Main extends JavaPlugin {
 								.equalsIgnoreCase(MYSQL_USERS_FIELDS_TYPE
 										.get(columnName))) {
 							log("Users table is an old version (fields not match, "
-									+ columnName + " => "
-									+ columnType + ":"
+									+ columnName
+									+ " => "
+									+ columnType
+									+ ":"
 									+ MYSQL_USERS_FIELDS_TYPE.get(columnName)
 									+ "), updating...");
 							update_users_table_fields();
@@ -350,7 +394,7 @@ public class Main extends JavaPlugin {
 	}
 
 	public void loadConfig() throws FileNotFoundException, IOException,
-	InvalidConfigurationException {
+			InvalidConfigurationException {
 
 		File file = new File(this.getDataFolder(), "config.yml");
 		if (!this.getDataFolder().exists())
@@ -365,7 +409,7 @@ public class Main extends JavaPlugin {
 		this.getConfig().addDefaults(defaults);
 		this.getConfig().options().copyDefaults(true);
 
-		this.MySQL = true;
+		this.ready = true;
 
 		this.dbHost = this.getConfig().getString("mysql.host");
 		this.dbUser = this.getConfig().getString("mysql.user");
@@ -377,12 +421,14 @@ public class Main extends JavaPlugin {
 		this.check_plugin_updates = this.getConfig().getBoolean(
 				"check-plugin-updates");
 		this.no_creative = this.getConfig().getBoolean("no-creative");
-		/*try{
-			CoreSQLProcess.pInventory = Pattern.compile(this.getConfig().getString("regex.inventory"));
-			CoreSQLProcess.pPendings = Pattern.compile(this.getConfig().getString("regex.pendings"));
-		}catch(PatternSyntaxException psE){
-			logException(psE, "Error in regex format, check the entry or delete to regenerate");
-		}*/
+		/*
+		 * try{ CoreSQLProcess.pInventory =
+		 * Pattern.compile(this.getConfig().getString("regex.inventory"));
+		 * CoreSQLProcess.pPendings =
+		 * Pattern.compile(this.getConfig().getString("regex.pendings"));
+		 * }catch(PatternSyntaxException psE){ logException(psE,
+		 * "Error in regex format, check the entry or delete to regenerate"); }
+		 */
 
 		this.delayCheck *= 20;
 		this.getConfig().save(file);
@@ -390,18 +436,19 @@ public class Main extends JavaPlugin {
 
 	private void updateUser(Player[] players, boolean async, int delay,
 			CommandSender cs) {
+		if(!this.ready) return;
 		if (async) {
 			this.getServer()
-			.getScheduler()
-			.scheduleAsyncDelayedTask(this,
-					new CoreSQLProcess(this, true, players, cs),
-					delay * 20);
+					.getScheduler()
+					.scheduleAsyncDelayedTask(this,
+							new CoreSQLProcess(this, true, players, cs),
+							delay * 20);
 		} else {
 			this.getServer()
-			.getScheduler()
-			.scheduleSyncDelayedTask(this,
-					new CoreSQLProcess(this, true, players, cs),
-					delay * 20);
+					.getScheduler()
+					.scheduleSyncDelayedTask(this,
+							new CoreSQLProcess(this, true, players, cs),
+							delay * 20);
 		}
 	}
 
