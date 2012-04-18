@@ -547,7 +547,6 @@ public class CoreSQLProcess {
 		}
 		if (l.length() > 1)
 			l = l.substring(0, l.length() - 1);
-		Main.log(l);
 		return l;
 	}
 
