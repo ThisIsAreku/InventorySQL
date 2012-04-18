@@ -23,6 +23,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 		if (cs instanceof Player) {
 			isNotPlayer = false;
 		}
+		
 		if (!"ichk".equals(label) && ((args.length == 0) || (args.length == 1 && "help".equals(args[0])))) {
 			sendMessage(cs, ChatColor.GREEN + "Usage :");
 			sendMessage(cs, ChatColor.GREEN	+ " * /invSQL check : update yourself");
@@ -50,7 +51,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 				sendMessage(cs, ChatColor.RED + "You cannot check yourself as a Console !");
 			} else {
 				sendMessage(cs,	ChatColor.GREEN + Main.getMessage("check-yourself"));
-				this.plugin.invokeCheck(new Player[] { (Player) cs }, true, cs);
+				this.plugin.invokeCheck(new Player[] { (Player) cs }, cs);
 			}
 			return true;
 		}
@@ -81,7 +82,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 							cs,
 							ChatColor.GREEN
 									+ Main.getMessage("check-all-players"));
-					this.plugin.invokeCheck(true, null);
+					this.plugin.invokeAllCheck(null);
 					return true;
 				}
 				Player pT;
@@ -100,8 +101,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 							ChatColor.GREEN
 									+ Main.getMessage("check-n-players",
 											p.size()));
-					this.plugin.invokeCheck(p.toArray(new Player[] {}), true,
-							cs);
+					this.plugin.invokeCheck(p.toArray(new Player[] {}), cs);
 				} else {
 					sendMessage(cs,
 							ChatColor.GREEN + Main.getMessage("no-online"));
@@ -113,8 +113,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 				} else {
 					sendMessage(cs,
 							ChatColor.GREEN + Main.getMessage("check-yourself"));
-					this.plugin.invokeCheck(new Player[] { (Player) cs }, true,
-							cs);
+					this.plugin.invokeCheck(new Player[] { (Player) cs }, cs);
 				}
 			}
 			return true;

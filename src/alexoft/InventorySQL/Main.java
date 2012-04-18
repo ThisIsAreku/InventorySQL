@@ -20,9 +20,11 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.bukkit.Material;
+import org.bukkit.block.Chest;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.craftbukkit.command.ColouredConsoleSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -32,20 +34,26 @@ import alexoft.commons.UpdateChecker;
 @SuppressWarnings("unused")
 public class Main extends JavaPlugin {
 	public static Main instance;
+
 	public boolean check_plugin_updates = true;
-	public boolean no_creative = true;
+	public boolean checkChest = false;
+	public boolean noCreative = true;
 	public String dbDatabase = null;
 	public String dbHost = null;
 	public String dbPass = null;
 	public String dbTable = null;
 	public String dbUser = null;
+	public int afterLoginDelay = 20;
+
 	public static int verbosity = 2;
 	public long delayCheck = 0;
 	private InventorySQLPlayerListener playerListener;
 	private InventorySQLCommandListener commandListener;
+	private CoreSQLProcess coreSQLProcess;
 	public Database MYSQLDB;
 	public Boolean ready = true;
 	public int invsqlTask;
+
 
 	public static HashMap<String, String> MYSQL_FIELDS_TYPE = new HashMap<String, String>();
 	public static HashMap<String, String> MYSQL_USERS_FIELDS_TYPE = new HashMap<String, String>();
@@ -156,22 +164,16 @@ public class Main extends JavaPlugin {
 			this.ready = false;
 		}
 
-		if (!this.ready) {
+		if (!this.ready)
 			log(Level.SEVERE, "check the config and use /invsql reload");
-		} else {
 
-			this.invsqlTask = this
-					.getServer()
-					.getScheduler()
-					.scheduleAsyncRepeatingTask(this, new CoreSQLProcess(this),
-							10 * 20, this.delayCheck);
-		}
+		this.coreSQLProcess = new CoreSQLProcess(this);
 		this.playerListener = new InventorySQLPlayerListener(this);
 		this.commandListener = new InventorySQLCommandListener(this);
 
 		this.getCommand("invSQL").setExecutor(commandListener);
 		this.getCommand("ichk").setExecutor(commandListener);
-		
+
 		startMetrics();
 		if (this.check_plugin_updates)
 			startUpdate();
@@ -222,7 +224,6 @@ public class Main extends JavaPlugin {
 						+ this.dbDatabase, this.dbUser, this.dbPass);
 
 				log("MySQL connection successful");
-				checkUpdateTable();
 			} else {
 				log(Level.SEVERE, "MySQL configuration error");
 			}
@@ -239,20 +240,30 @@ public class Main extends JavaPlugin {
 		if (!this.ready) {
 			log(Level.SEVERE, "check the config and use /invsql reload");
 		} else {
-			this.playerListener = new InventorySQLPlayerListener(this);
+			this.getServer().getScheduler()
+					.scheduleAsyncDelayedTask(this, new Runnable() {
 
+						@Override
+						public void run() {
+							log("Checking table..");
+							if (checkUpdateTable()) {
+								ready = true;
+								coreSQLProcess.reload();
+							} else {
+								log(Level.SEVERE,
+										"Cannot update/create table !");
+								log(Level.SEVERE,
+										"check the config and use /invsql reload");
+								ready = false;
+							}
+						}
 
-			this.invsqlTask = this
-					.getServer()
-					.getScheduler()
-					.scheduleAsyncRepeatingTask(this, new CoreSQLProcess(this),
-							10 * 20, this.delayCheck);
+					});
 		}
 	}
 
-	public void checkUpdateTable() {
+	public boolean checkUpdateTable() {
 		try {
-
 			if (!this.MYSQLDB.tableExist(this.dbTable)) {
 				log("Creating data table...");
 				String create = "CREATE TABLE IF NOT EXISTS `"
@@ -347,9 +358,11 @@ public class Main extends JavaPlugin {
 				}
 				rs.close();
 			}
+			return true;
 		} catch (Exception ex) {
 			Main.logException(ex, "table need update?");
 		}
+		return false;
 	}
 
 	private void update_table_fields() {
@@ -420,7 +433,8 @@ public class Main extends JavaPlugin {
 		Main.verbosity = this.getConfig().getInt("verbosity");
 		this.check_plugin_updates = this.getConfig().getBoolean(
 				"check-plugin-updates");
-		this.no_creative = this.getConfig().getBoolean("no-creative");
+		this.noCreative = this.getConfig().getBoolean("no-creative");
+		this.afterLoginDelay = this.getConfig().getInt("after-login-delay");
 		/*
 		 * try{ CoreSQLProcess.pInventory =
 		 * Pattern.compile(this.getConfig().getString("regex.inventory"));
@@ -431,42 +445,53 @@ public class Main extends JavaPlugin {
 		 */
 
 		this.delayCheck *= 20;
+		this.afterLoginDelay *= 20;
 		this.getConfig().save(file);
 	}
 
-	private void updateUser(Player[] players, boolean async, int delay,
-			CommandSender cs) {
-		if(!this.ready) return;
-		if (async) {
-			this.getServer()
-					.getScheduler()
-					.scheduleAsyncDelayedTask(this,
-							new CoreSQLProcess(this, true, players, cs),
-							delay * 20);
-		} else {
-			this.getServer()
-					.getScheduler()
-					.scheduleSyncDelayedTask(this,
-							new CoreSQLProcess(this, true, players, cs),
-							delay * 20);
-		}
+	private void updateUser(Player[] players, Chest[] chests, CommandSender cs, int delay) {
+		if (!this.ready)
+			return;
+		final CoreSQLItem i = new CoreSQLItem(players,chests, cs);
+		this.getServer().getScheduler()
+				.scheduleSyncDelayedTask(this, new Runnable() {
+					@Override
+					public void run() {
+						coreSQLProcess.addTask(i);
+					}
+				}, delay);
 	}
 
-	public void invokeCheck(boolean async, CommandSender cs) {
-		updateUser(this.getServer().getOnlinePlayers(), async, 5, cs);
+	public void invokeAllCheck(CommandSender cs) {
+		updateUser(null, null, cs, 5);
 	}
 
-	public void invokeCheck(Player[] players, boolean async, CommandSender cs) {
-		updateUser(players, async, 5, cs);
+	public void invokeAllCheck(int delay, CommandSender cs) {
+		updateUser(null, null, cs, delay);
 	}
 
-	public void invokeCheck(boolean async, int delay, CommandSender cs) {
-		updateUser(this.getServer().getOnlinePlayers(), async, delay, cs);
+	public void invokeCheck(Player[] players, CommandSender cs) {
+		updateUser(players, null, cs, 5);
 	}
 
-	public void invokeCheck(Player[] players, boolean async, int delay,
-			CommandSender cs) {
-		updateUser(players, async, delay, cs);
+	public void invokeCheck(Player[] players, int delay, CommandSender cs) {
+		updateUser(players, null, cs, delay);
+	}
+
+	public void invokeCheck(Chest[] chests, CommandSender cs) {
+		updateUser(null, chests, cs, 5);
+	}
+
+	public void invokeCheck(Chest[] chests, int delay, CommandSender cs) {
+		updateUser(null, chests, cs, delay);
+	}
+
+	public void invokeCheck(Player[] players, Chest[] chests, CommandSender cs) {
+		updateUser(players, chests, cs, 5);
+	}
+
+	public void invokeCheck(Player[] players, Chest[] chests, int delay, CommandSender cs) {
+		updateUser(players, chests, cs, delay);
 	}
 
 	private void copy(InputStream src, File dst) throws IOException {
