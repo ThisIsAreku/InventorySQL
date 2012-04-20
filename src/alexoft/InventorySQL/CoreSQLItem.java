@@ -49,24 +49,6 @@ public class CoreSQLItem {
 		}
 		return false;
 	}
-	@Override
-	public boolean equals(Object obj) {
-		try{
-			CoreSQLItem t = (CoreSQLItem) obj;
-			Main.log("eq:"+this.players.equals(t.players));
-			/*if(( == ) &&
-					(this.chests == t.chests) &&
-					(this.cs == t.cs)){
-				return true;
-			}else{
-				return false;
-			}*/
-			return false;
-		}catch(Exception e){
-			Main.logException(e, "eq");
-			return false;
-		}
-	}
 	
 	
 }

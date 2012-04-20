@@ -34,6 +34,7 @@ import alexoft.commons.UpdateChecker;
 @SuppressWarnings("unused")
 public class Main extends JavaPlugin {
 	public static Main instance;
+	public static boolean debug = false;
 
 	public boolean check_plugin_updates = true;
 	public boolean checkChest = false;
@@ -70,6 +71,10 @@ public class Main extends JavaPlugin {
 
 	public static void log(String m) {
 		log(Level.INFO, m);
+	}
+
+	public static void d(String m) {
+		if(debug) log(Level.FINER, m);
 	}
 
 	public static void logException(Exception e, String m) {
