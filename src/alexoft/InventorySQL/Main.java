@@ -39,6 +39,7 @@ public class Main extends JavaPlugin {
 	public boolean check_plugin_updates = true;
 	public boolean checkChest = false;
 	public boolean noCreative = true;
+	public boolean multiworld = true;
 	public String dbDatabase = null;
 	public String dbHost = null;
 	public String dbPass = null;
@@ -46,7 +47,6 @@ public class Main extends JavaPlugin {
 	public String dbUser = null;
 	public int afterLoginDelay = 20;
 
-	public static int verbosity = 2;
 	public long delayCheck = 0;
 	private InventorySQLPlayerListener playerListener;
 	private InventorySQLCommandListener commandListener;
@@ -60,21 +60,20 @@ public class Main extends JavaPlugin {
 	public static HashMap<String, String> MYSQL_USERS_FIELDS_TYPE = new HashMap<String, String>();
 
 	public static void log(Level level, String m) {
-		if (level == Level.WARNING && verbosity < 2) {
-			return;
-		}
-		if (level == Level.INFO && verbosity < 1) {
-			return;
-		}
 		instance.getLogger().log(level, m);
+	}
+	
+	public static void d(Level level, String m) {
+		if(!debug) return;
+		instance.getLogger().log(level, "[DEBUG] "+m);
 	}
 
 	public static void log(String m) {
 		log(Level.INFO, m);
 	}
-
+	
 	public static void d(String m) {
-		if(debug) log(Level.FINER, m);
+		d(Level.INFO, m);
 	}
 
 	public static void logException(Exception e, String m) {
@@ -435,11 +434,13 @@ public class Main extends JavaPlugin {
 		this.dbDatabase = this.getConfig().getString("mysql.db");
 		this.dbTable = this.getConfig().getString("mysql.table");
 		this.delayCheck = this.getConfig().getInt("check-interval");
-		Main.verbosity = this.getConfig().getInt("verbosity");
 		this.check_plugin_updates = this.getConfig().getBoolean(
 				"check-plugin-updates");
 		this.noCreative = this.getConfig().getBoolean("no-creative");
 		this.afterLoginDelay = this.getConfig().getInt("after-login-delay");
+		this.multiworld = this.getConfig().getBoolean("multiworld");
+		
+		Main.debug = this.getConfig().getBoolean("debug");
 		/*
 		 * try{ CoreSQLProcess.pInventory =
 		 * Pattern.compile(this.getConfig().getString("regex.inventory"));

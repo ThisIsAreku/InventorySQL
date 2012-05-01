@@ -18,12 +18,30 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class InventorySQLPlayerListener implements Listener {
-
+	//private HashMap<Player, Integer> updateTempo;
 	private Main plugin;
+	
+	private boolean doTemp(Player p){
+		/*if(updateTempo.containsKey(p)){
+			Integer i = updateTempo.get(p);
+			if(i >= 5){
+				updateTempo.put(p, 0);
+				return true;
+			}else{
+				updateTempo.put(p, i+1);
+				return false;
+			}
+		}else{
+			updateTempo.put(p, 1);
+			return false;
+		}*/
+		return true;
+	}
 
 	public InventorySQLPlayerListener(Main plugin) {
 		try {
 			this.plugin = plugin;
+			//this.updateTempo = new HashMap<Player, Integer>();
 			plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		} catch (Exception e) {
 			Main.logException(e, "Listener init");
@@ -81,7 +99,7 @@ public class InventorySQLPlayerListener implements Listener {
 			this.plugin.invokeCheck(new Player[] { event.getPlayer() },
 					new Chest[] { (Chest) event.getBlockPlaced().getState() }, null);
 		}else{
-			this.plugin.invokeCheck(new Player[] { event.getPlayer() }, null);
+			if(doTemp(event.getPlayer())) this.plugin.invokeCheck(new Player[] { event.getPlayer() }, null);
 		}
 	}
 

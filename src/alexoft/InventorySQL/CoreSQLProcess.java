@@ -6,9 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -37,43 +35,39 @@ public class CoreSQLProcess {
 	public static Pattern pPendings = Pattern
 			.compile("\\[(-|\\+)?\\(([0-9]{1,8}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
 	public Main plugin;
-	private Queue<CoreSQLItem> q;
-	private int loopTaskPeriod = 10;
-	private int loopTask = -1;
 	private int checkAllTask = -1;
 
 	public CoreSQLProcess(Main plugin) {
 		this.plugin = plugin;
-		this.q = new ConcurrentLinkedQueue<CoreSQLItem>();
 		if (this.plugin.ready)
 			reload();
 	}
 
 	public void reload() {
-		this.plugin.getServer().getScheduler().cancelTask(loopTask);
 		this.plugin.getServer().getScheduler().cancelTask(checkAllTask);
-		loopTask = this.plugin.getServer().getScheduler()
+		checkAllTask = this.plugin.getServer().getScheduler()
 				.scheduleAsyncRepeatingTask(plugin, new Runnable() {
 					public void run() {
-						processQueue();
-					}
-				}, 20, loopTaskPeriod);
-		checkAllTask = this.plugin.getServer().getScheduler()
-				.scheduleSyncRepeatingTask(plugin, new Runnable() {
-					public void run() {
-						q.add(new CoreSQLItem(null, null, null));
+						CoreSQLItem i = new CoreSQLItem(null, null, null);
+						Main.d("auto check :" + i.hashCode());
+						doProcess(i);
 					}
 				}, 20, this.plugin.delayCheck);
 	}
 
-	public void addTask(CoreSQLItem i) {
-		if(!this.q.contains(i)) this.q.add(i);
+	public void addTask(final CoreSQLItem i) {
+		this.plugin.getServer().getScheduler()
+				.scheduleAsyncDelayedTask(plugin, new Runnable() {
+					public void run() {
+						Main.d("Manual check :" + i.hashCode());
+						doProcess(i);
+					}
+				});
 	}
-
-	private void processQueue() {
+	
+	private void doProcess(CoreSQLItem i) {
 		if (!this.plugin.ready)
 			return;
-		CoreSQLItem i = this.q.poll();
 		if (i == null)
 			return;
 		if (i.hasPlayersData()) {
@@ -131,6 +125,7 @@ public class CoreSQLProcess {
 				Main.logException(ex, "exception in playerlogic - check all");
 			}
 		}
+		Main.d("end check :" + i.hashCode());
 	}
 
 	private void checkPlayers(CoreSQLItem i) {
@@ -142,11 +137,14 @@ public class CoreSQLProcess {
 				int pendings = 0;
 				if (!usualChecks(p))
 					return;
-
-				r = this.plugin.MYSQLDB.query("SELECT * FROM `"
-						+ this.plugin.dbTable
-						+ "` WHERE LOWER(`owner`) = LOWER('" + p.getName()
-						+ "') AND `world` = '" + p.getWorld().getName() + "';");
+				
+				String q = "SELECT * FROM `" + this.plugin.dbTable + "` WHERE LOWER(`owner`) = LOWER('" + p.getName() + "')";
+				if(this.plugin.multiworld){
+					 q += " AND `world` = '" + p.getWorld().getName() + "';";
+				}else{
+					 q += ";";
+				}
+				r = this.plugin.MYSQLDB.query(q);
 
 				if (r.first()) {
 					List<ActionStack> fullInv = new ArrayList<ActionStack>();
@@ -288,11 +286,13 @@ public class CoreSQLProcess {
 				if (!usualChecks(c))
 					return;
 
-				r = this.plugin.MYSQLDB.query("SELECT * FROM `"
-						+ this.plugin.dbTable + "` WHERE `x` ='" + c.getX()
-						+ "'" + " AND `y` ='" + c.getY() + "'" + " AND `z` ='"
-						+ c.getZ() + "'" + " AND `world` = '"
-						+ c.getWorld().getName() + "';");
+				String q = "SELECT * FROM `" + this.plugin.dbTable + "` WHERE `x` ='" + c.getX() + "'" + " AND `y` ='" + c.getY() + "'" + " AND `z` ='" + c.getZ() + "'";
+				if(this.plugin.multiworld){
+					 q += " AND `world` = '" + c.getWorld().getName() + "';";
+				}else{
+					 q += ";";
+				}
+				r = this.plugin.MYSQLDB.query(q);
 
 				if (r.first()) {
 					String chestLocationString = String.format(
@@ -471,6 +471,7 @@ public class CoreSQLProcess {
 		return true;
 	}
 
+	@SuppressWarnings("unused")
 	private List<ActionStack> buildInvList(String data) {
 		List<ActionStack> inv = new ArrayList<ActionStack>();
 		Matcher m;
