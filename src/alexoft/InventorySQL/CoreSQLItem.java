@@ -8,11 +8,23 @@ public class CoreSQLItem {
 	private Chest[] chests = null;
 	private Player[] players = null;
 	private CommandSender cs;
+	private boolean scheduled = false;
+	private boolean backup = false;
 
 	public CoreSQLItem(Player[] players,
 			CommandSender cs){
 		this.players = players;
 		this.cs = cs;
+	}
+	public CoreSQLItem doBackup(){
+		this.backup = true;
+		this.scheduled = false;
+		this.chests = null;
+		this.players = null;
+		return this;
+	}
+	public CoreSQLItem(){
+		this.scheduled = true;
 	}
 	public CoreSQLItem(Chest[] chests,
 			CommandSender cs){
@@ -48,6 +60,12 @@ public class CoreSQLItem {
 			return (this.chests.length !=0);
 		}
 		return false;
+	}
+	public boolean isScheduled(){
+		return this.scheduled;
+	}
+	public boolean isBackup(){
+		return this.backup;
 	}
 	
 	

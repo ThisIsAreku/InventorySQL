@@ -10,6 +10,10 @@ mysql:
   pass: pass
   db: minecraft
   table: InventorySQL
+backup:
+  enabled: true
+  interval: 600
+  cleanup-days: 5
 messages:
   no-modif: 'No modifications'
   modif: '%s items added, %s items removed, %s items pendings'

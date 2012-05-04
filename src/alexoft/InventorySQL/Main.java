@@ -35,43 +35,46 @@ import alexoft.commons.UpdateChecker;
 public class Main extends JavaPlugin {
 	public static Main instance;
 	public static boolean debug = false;
+	public static final String TABLE_VERSION = "1.2";
 
-	public boolean check_plugin_updates = true;
-	public boolean checkChest = false;
-	public boolean noCreative = true;
-	public boolean multiworld = true;
 	public String dbDatabase = null;
 	public String dbHost = null;
 	public String dbPass = null;
 	public String dbTable = null;
 	public String dbUser = null;
+
+	public boolean check_plugin_updates = true;
+	public boolean checkChest = false;
+	public boolean noCreative = true;
+	public boolean multiworld = true;
 	public int afterLoginDelay = 20;
 
-	public long delayCheck = 0;
+	public boolean backup_enabled = true;
+	public long backup_interval = 0;
+	public int backup_cleanup_days = 0;
+
+	public long check_interval = 0;
+
 	private InventorySQLPlayerListener playerListener;
 	private InventorySQLCommandListener commandListener;
 	private CoreSQLProcess coreSQLProcess;
 	public Database MYSQLDB;
 	public Boolean ready = true;
-	public int invsqlTask;
-
-
-	public static HashMap<String, String> MYSQL_FIELDS_TYPE = new HashMap<String, String>();
-	public static HashMap<String, String> MYSQL_USERS_FIELDS_TYPE = new HashMap<String, String>();
 
 	public static void log(Level level, String m) {
 		instance.getLogger().log(level, m);
 	}
-	
+
 	public static void d(Level level, String m) {
-		if(!debug) return;
-		instance.getLogger().log(level, "[DEBUG] "+m);
+		if (!debug)
+			return;
+		instance.getLogger().log(level, "[DEBUG] " + m);
 	}
 
 	public static void log(String m) {
 		log(Level.INFO, m);
 	}
-	
+
 	public static void d(String m) {
 		d(Level.INFO, m);
 	}
@@ -98,26 +101,6 @@ public class Main extends JavaPlugin {
 		log(Level.SEVERE, "---------------------------------------");
 	}
 
-	private static void populateHashMap() {
-		MYSQL_FIELDS_TYPE.clear();
-		MYSQL_USERS_FIELDS_TYPE.clear();
-
-		MYSQL_FIELDS_TYPE.put("id", "INT");
-		MYSQL_FIELDS_TYPE.put("owner", "VARCHAR");
-		MYSQL_FIELDS_TYPE.put("world", "VARCHAR");
-		MYSQL_FIELDS_TYPE.put("ischest", "BIT");
-		MYSQL_FIELDS_TYPE.put("x", "INT");
-		MYSQL_FIELDS_TYPE.put("y", "INT");
-		MYSQL_FIELDS_TYPE.put("z", "INT");
-		MYSQL_FIELDS_TYPE.put("inventory", "LONGTEXT");
-		MYSQL_FIELDS_TYPE.put("pendings", "LONGTEXT");
-		MYSQL_FIELDS_TYPE.put("last_update", "TIMESTAMP");
-
-		MYSQL_USERS_FIELDS_TYPE.put("id", "INT");
-		MYSQL_USERS_FIELDS_TYPE.put("name", "VARCHAR");
-		MYSQL_USERS_FIELDS_TYPE.put("password", "VARCHAR");
-	}
-
 	public static String getMessage(String k, Object... format) {
 		return String.format(instance.getConfig().getString("messages." + k),
 				format);
@@ -140,8 +123,6 @@ public class Main extends JavaPlugin {
 				+ this.getDescription().getVersion());
 		log("= " + this.getDescription().getWebsite() + " =");
 
-		populateHashMap();
-
 		try {
 			this.loadConfig();
 		} catch (Exception e) {
@@ -159,7 +140,7 @@ public class Main extends JavaPlugin {
 				log(Level.SEVERE, "MySQL configuration error");
 			}
 		} catch (SQLException ex) {
-			Main.logException(ex, "mysql init");
+			// Main.logException(ex, "mysql init");
 			log(Level.SEVERE, "MySQL connection failed");
 			this.ready = false;
 		} catch (ClassNotFoundException e) {
@@ -184,10 +165,13 @@ public class Main extends JavaPlugin {
 
 		// debug code to pring pretty-formated ids
 		// used to update the webui
-		/*
-		 * for (Material m : Material.values()) { System.out.println("$items[" +
-		 * m.getId() + "] = '" + m.toString() + "';"); }
-		 */
+		if (Main.debug) {
+			for (Material m : Material.values()) {
+				System.out.println("$items[" + m.getId() + "] = '"
+						+ m.toString() + "';");
+			}
+		}
+
 	}
 
 	public void startMetrics() {
@@ -215,7 +199,6 @@ public class Main extends JavaPlugin {
 	}
 
 	public void reload() {
-		this.getServer().getScheduler().cancelTask(this.invsqlTask);
 		try {
 			this.loadConfig();
 		} catch (Exception e) {
@@ -268,100 +251,10 @@ public class Main extends JavaPlugin {
 
 	public boolean checkUpdateTable() {
 		try {
-			if (!this.MYSQLDB.tableExist(this.dbTable)) {
-				log("Creating data table...");
-				String create = "CREATE TABLE IF NOT EXISTS `"
-						+ this.dbTable
-						+ "` (`id` int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=utf8;";
-				if (this.MYSQLDB.queryUpdate(create) != 0) {
-					log(Level.SEVERE,
-							"Cannot create data table, check your config !");
-				} else {
-					update_table_fields();
-				}
-			} else {
-				ResultSet rs = this.MYSQLDB.query("SELECT * FROM `"
-						+ this.dbTable + "`");
-				ResultSetMetaData metadata = rs.getMetaData();
-
-				if (metadata.getColumnCount() != MYSQL_FIELDS_TYPE.size()) {
-					log("Data table is an old version (fields count differs, "
-							+ metadata.getColumnCount() + ":"
-							+ MYSQL_FIELDS_TYPE.size() + "), updating...");
-					// this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";");
-					update_table_fields();
-				} else {
-					DatabaseMetaData meta = this.MYSQLDB.getMetaData();
-					ResultSet rsColumns = meta.getColumns(null, null,
-							this.dbTable, null);
-					while (rsColumns.next()) {
-						String columnName = rsColumns.getString("COLUMN_NAME");
-						String columnType = rsColumns.getString("TYPE_NAME");
-						int size = rsColumns.getInt("COLUMN_SIZE");
-						if (!columnType.equalsIgnoreCase(MYSQL_FIELDS_TYPE
-								.get(columnName))) {
-							log("Data table is an old version (fields not match, "
-									+ columnName
-									+ " => "
-									+ columnType
-									+ ":"
-									+ MYSQL_FIELDS_TYPE.get(columnName)
-									+ "), updating...");
-							update_table_fields();
-							break;
-						}
-					}
-				}
-				rs.close();
-			}
-			if (!this.MYSQLDB.tableExist(this.dbTable + "_users")) {
-				log("Creating users table...");
-				String create = "CREATE TABLE IF NOT EXISTS `"
-						+ this.dbTable
-						+ "_users"
-						+ "` (`id` int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=utf8;";
-				if (this.MYSQLDB.queryUpdate(create) != 0) {
-					log(Level.SEVERE,
-							"Cannot create users table, check your config !");
-				} else {
-					update_users_table_fields();
-				}
-			} else {
-				ResultSet rs = this.MYSQLDB.query("SELECT * FROM `"
-						+ this.dbTable + "_users" + "`");
-				ResultSetMetaData metadata = rs.getMetaData();
-
-				if (metadata.getColumnCount() != MYSQL_USERS_FIELDS_TYPE.size()) {
-					log("Users table is an old version (fields count differs, "
-							+ metadata.getColumnCount() + ":"
-							+ MYSQL_USERS_FIELDS_TYPE.size() + "), updating...");
-					// this.MYSQLDB.queryUpdate("DROP TABLE "+this.dbTable+";");
-					update_users_table_fields();
-				} else {
-					DatabaseMetaData meta = this.MYSQLDB.getMetaData();
-					ResultSet rsColumns = meta.getColumns(null, null,
-							this.dbTable + "_users", null);
-					while (rsColumns.next()) {
-						String columnName = rsColumns.getString("COLUMN_NAME");
-						String columnType = rsColumns.getString("TYPE_NAME");
-						int size = rsColumns.getInt("COLUMN_SIZE");
-						if (!columnType
-								.equalsIgnoreCase(MYSQL_USERS_FIELDS_TYPE
-										.get(columnName))) {
-							log("Users table is an old version (fields not match, "
-									+ columnName
-									+ " => "
-									+ columnType
-									+ ":"
-									+ MYSQL_USERS_FIELDS_TYPE.get(columnName)
-									+ "), updating...");
-							update_users_table_fields();
-							break;
-						}
-					}
-				}
-				rs.close();
-			}
+			check_table_version("");
+			check_table_version("_users");
+			if (this.backup_enabled)
+				check_table_version("_backup");
 			return true;
 		} catch (Exception ex) {
 			Main.logException(ex, "table need update?");
@@ -369,45 +262,53 @@ public class Main extends JavaPlugin {
 		return false;
 	}
 
-	private void update_table_fields() {
-		InputStream is = this
-				.getResource("alexoft/InventorySQL/schema_data.sql");
-		Scanner reader = new Scanner(is);
-		String query = "";
-		while (reader.hasNextLine()) {
-			query += System.getProperty("line.separator") + reader.nextLine();
-		}
-		query = query.replace("%%TABLENAME%%", this.dbTable);
-		for (String r : query.split(";")) {
-			this.MYSQLDB.queryUpdateQuiet(r);
-		}
+	private void check_table_version(String selector) throws SQLException,
+			EmptyException {
+		if (!this.MYSQLDB.tableExist(this.dbTable + selector)) {
+			log("Creating '" + this.dbTable + selector + "' table...");
+			String create = "CREATE TABLE IF NOT EXISTS `"
+					+ this.dbTable
+					+ selector
+					+ "` (`id` int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=utf8;";
+			if (this.MYSQLDB.queryUpdate(create) != 0) {
+				log(Level.SEVERE,
+						"Cannot create users table, check your config !");
+			} else {
+				update_table_fields(selector);
+			}
+		} else {
+			ResultSet rs = this.MYSQLDB.query("SHOW CREATE TABLE `"
+					+ this.dbTable + selector + "`");
+			rs.first();
+			String comment = rs.getString(2);
+			int p = comment.indexOf("COMMENT='");
+			if (p == -1) {
+				update_table_fields(selector);
+			} else {
+				comment = comment
+						.substring(p + 9, comment.indexOf('\'', p + 9));
 
-		is = this.getResource("alexoft/InventorySQL/schema_users.sql");
-		reader = new Scanner(is);
-		query = "";
-		while (reader.hasNextLine()) {
-			query += System.getProperty("line.separator") + reader.nextLine();
+				if (!("table format : " + Main.TABLE_VERSION).equals(comment)) {
+					update_table_fields(selector);
+				}
+			}
+			rs.close();
 		}
-		query = query.replace("%%TABLENAME%%", this.dbTable);
-		for (String r : query.split(";")) {
-			this.MYSQLDB.queryUpdateQuiet(r);
-		}
-		log("Data table update done");
 	}
 
-	private void update_users_table_fields() {
-		InputStream is = this
-				.getResource("alexoft/InventorySQL/schema_users.sql");
-		Scanner reader = new Scanner(is);
-		String query = "";
-		while (reader.hasNextLine()) {
-			query += System.getProperty("line.separator") + reader.nextLine();
-		}
+	private void update_table_fields(String selector) {
+		log("Table '" + this.dbTable + selector + "' need update");
+		String query = read(this.getResource("alexoft/InventorySQL/schema"
+				+ selector + ".sql"));
 		query = query.replace("%%TABLENAME%%", this.dbTable);
 		for (String r : query.split(";")) {
 			this.MYSQLDB.queryUpdateQuiet(r);
 		}
-		log("Users table update done");
+		query = "ALTER IGNORE TABLE `%%TABLENAME%%` COMMENT = 'table format : %%VERSION%%'"
+				.replace("%%TABLENAME%%", this.dbTable + selector).replace(
+						"%%VERSION%%", Main.TABLE_VERSION);
+		this.MYSQLDB.queryUpdateQuiet(query);
+		log("'" + this.dbTable + selector + "' table: update done");
 	}
 
 	public void loadConfig() throws FileNotFoundException, IOException,
@@ -433,32 +334,31 @@ public class Main extends JavaPlugin {
 		this.dbPass = this.getConfig().getString("mysql.pass");
 		this.dbDatabase = this.getConfig().getString("mysql.db");
 		this.dbTable = this.getConfig().getString("mysql.table");
-		this.delayCheck = this.getConfig().getInt("check-interval");
+		this.check_interval = this.getConfig().getInt("check-interval");
 		this.check_plugin_updates = this.getConfig().getBoolean(
 				"check-plugin-updates");
 		this.noCreative = this.getConfig().getBoolean("no-creative");
 		this.afterLoginDelay = this.getConfig().getInt("after-login-delay");
 		this.multiworld = this.getConfig().getBoolean("multiworld");
-		
-		Main.debug = this.getConfig().getBoolean("debug");
-		/*
-		 * try{ CoreSQLProcess.pInventory =
-		 * Pattern.compile(this.getConfig().getString("regex.inventory"));
-		 * CoreSQLProcess.pPendings =
-		 * Pattern.compile(this.getConfig().getString("regex.pendings"));
-		 * }catch(PatternSyntaxException psE){ logException(psE,
-		 * "Error in regex format, check the entry or delete to regenerate"); }
-		 */
 
-		this.delayCheck *= 20;
+		this.backup_enabled = this.getConfig().getBoolean("backup.enabled");
+		this.backup_interval = this.getConfig().getInt("backup.interval");
+		this.backup_cleanup_days = this.getConfig().getInt(
+				"backup.cleanup-days");
+
+		Main.debug = this.getConfig().getBoolean("debug");
+
+		this.check_interval *= 20;
+		this.backup_interval *= 20;
 		this.afterLoginDelay *= 20;
 		this.getConfig().save(file);
 	}
 
-	private void updateUser(Player[] players, Chest[] chests, CommandSender cs, int delay) {
+	private void updateUser(Player[] players, Chest[] chests, CommandSender cs,
+			int delay) {
 		if (!this.ready)
 			return;
-		final CoreSQLItem i = new CoreSQLItem(players,chests, cs);
+		final CoreSQLItem i = new CoreSQLItem(players, chests, cs);
 		this.getServer().getScheduler()
 				.scheduleSyncDelayedTask(this, new Runnable() {
 					@Override
@@ -496,7 +396,8 @@ public class Main extends JavaPlugin {
 		updateUser(players, chests, cs, 5);
 	}
 
-	public void invokeCheck(Player[] players, Chest[] chests, int delay, CommandSender cs) {
+	public void invokeCheck(Player[] players, Chest[] chests, int delay,
+			CommandSender cs) {
 		updateUser(players, chests, cs, delay);
 	}
 
@@ -511,5 +412,23 @@ public class Main extends JavaPlugin {
 		}
 		src.close();
 		out.close();
+	}
+
+	private String read(InputStream src) {
+		Scanner reader = new Scanner(src);
+		String s = "";
+		String l = "";
+		while (reader.hasNextLine()) {
+			l = reader.nextLine();
+			if (!l.startsWith("#")) {
+				s += System.getProperty("line.separator") + l;
+			}
+		}
+		try {
+			src.close();
+			reader.close();
+		} catch (Exception e) {
+		}
+		return s;
 	}
 }

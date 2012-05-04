@@ -30,12 +30,15 @@ import org.bukkit.material.MaterialData;
  * @author Alexandre
  */
 public class CoreSQLProcess {
-	public static Pattern pInventory = Pattern
+	public static final Pattern pInventory = Pattern
 			.compile("\\[([0-9]{1,2})\\(([0-9]{1,8}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
-	public static Pattern pPendings = Pattern
+	public static final Pattern pPendings = Pattern
 			.compile("\\[(-|\\+)?\\(([0-9]{1,8}):([0-9]{1,3})(\\|([0-9=,]*?))?\\)x(-?[0-9]{1,2})\\]");
+
 	public Main plugin;
 	private int checkAllTask = -1;
+	private int backupTask = -1;
+	private int cleanupTask = -1;
 
 	public CoreSQLProcess(Main plugin) {
 		this.plugin = plugin;
@@ -48,11 +51,29 @@ public class CoreSQLProcess {
 		checkAllTask = this.plugin.getServer().getScheduler()
 				.scheduleAsyncRepeatingTask(plugin, new Runnable() {
 					public void run() {
-						CoreSQLItem i = new CoreSQLItem(null, null, null);
+						CoreSQLItem i = new CoreSQLItem();
 						Main.d("auto check :" + i.hashCode());
 						doProcess(i);
 					}
-				}, 20, this.plugin.delayCheck);
+				}, 20, this.plugin.check_interval);
+
+		this.plugin.getServer().getScheduler().cancelTask(backupTask);
+		backupTask = this.plugin.getServer().getScheduler()
+				.scheduleAsyncRepeatingTask(plugin, new Runnable() {
+					public void run() {
+						CoreSQLItem i = new CoreSQLItem().doBackup();
+						Main.d("backup :" + i.hashCode());
+						doProcess(i);
+					}
+				}, 20, this.plugin.backup_interval);
+
+		this.plugin.getServer().getScheduler().cancelTask(cleanupTask);
+		cleanupTask = this.plugin.getServer().getScheduler()
+				.scheduleAsyncRepeatingTask(plugin, new Runnable() {
+					public void run() {
+						doBackupCleanup();
+					}
+				}, 20, (this.plugin.backup_cleanup_days * 1728000));
 	}
 
 	public void addTask(final CoreSQLItem i) {
@@ -64,19 +85,49 @@ public class CoreSQLProcess {
 					}
 				});
 	}
-	
+
+	private void doBackupCleanup() {
+		try {
+			Main.d("Backup cleaning");
+			this.plugin.MYSQLDB.queryUpdate(String.format(
+					Constants.REQ_CLEANUP_BACKUP, this.plugin.dbTable,
+					this.plugin.backup_cleanup_days));
+		} catch (EmptyException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void doProcess(CoreSQLItem i) {
 		if (!this.plugin.ready)
 			return;
 		if (i == null)
 			return;
 		if (i.hasPlayersData()) {
-			checkPlayers(i);
+			checkPlayers(i, false);
 		}
 		if (i.hasChestData()) {
 			checkChests(i);
 		}
-		if ((!i.hasChestData()) && (!i.hasPlayersData())) {
+		if (i.isBackup()) {
+			try {
+				Future<Player[]> f = this.plugin.getServer().getScheduler()
+						.callSyncMethod(this.plugin, new Callable<Player[]>() {
+							@Override
+							public Player[] call() throws Exception {
+								return plugin.getServer().getOnlinePlayers();
+							}
+						});
+				Player[] pList = f.get();
+
+				if (pList.length > 0)
+					checkPlayers(new CoreSQLItem(pList, i.getCommandSender()),
+							true);
+				
+			} catch (Exception ex) {
+				Main.logException(ex, "exception in playerlogic - check all");
+			}
+		}
+		if (i.isScheduled()) {
 			try {
 				List<Chest> cList = new ArrayList<Chest>();
 				if (this.plugin.checkChest) {
@@ -117,10 +168,14 @@ public class CoreSQLProcess {
 							}
 						});
 				Player[] pList = f.get();
-				if ((pList.length > 0) || (cList.size() > 0)) {
-					addTask(new CoreSQLItem(pList, cList.toArray(new Chest[0]),
+
+				if (pList.length > 0)
+					checkPlayers(new CoreSQLItem(pList, i.getCommandSender()),
+							false);
+				if (cList.size() > 0)
+					checkChests(new CoreSQLItem(cList.toArray(new Chest[0]),
 							i.getCommandSender()));
-				}
+
 			} catch (Exception ex) {
 				Main.logException(ex, "exception in playerlogic - check all");
 			}
@@ -128,21 +183,25 @@ public class CoreSQLProcess {
 		Main.d("end check :" + i.hashCode());
 	}
 
-	private void checkPlayers(CoreSQLItem i) {
+	private void checkPlayers(CoreSQLItem i, boolean isbackup) {
 		for (final Player p : i.getPlayers()) {
 			try {
+				if (!usualChecks(p))
+					return;
+
 				ResultSet r;
 				int added = 0;
 				int removed = 0;
 				int pendings = 0;
-				if (!usualChecks(p))
-					return;
-				
-				String q = "SELECT * FROM `" + this.plugin.dbTable + "` WHERE LOWER(`owner`) = LOWER('" + p.getName() + "')";
-				if(this.plugin.multiworld){
-					 q += " AND `world` = '" + p.getWorld().getName() + "';";
-				}else{
-					 q += ";";
+				String invData = "";
+
+				String q = "SELECT * FROM `" + this.plugin.dbTable
+						+ "` WHERE LOWER(`owner`) = LOWER('" + p.getName()
+						+ "')";
+				if (this.plugin.multiworld) {
+					q += " AND `world` = '" + p.getWorld().getName() + "';";
+				} else {
+					q += ";";
 				}
 				r = this.plugin.MYSQLDB.query(q);
 
@@ -231,42 +290,43 @@ public class CoreSQLProcess {
 						}
 					}
 
-					String invData = buildInvString(p.getInventory());
+					invData = buildInvString(p.getInventory());
 
 					if (fullInv.size() != 0) {
 						Main.log(Level.WARNING, "\t Unable to add/remove "
 								+ fullInv.size() + " item(s)");
 					}
-					this.plugin.MYSQLDB.queryUpdate("UPDATE `"
-							+ this.plugin.dbTable
-							+ "` SET `inventory` = '"
-							+ invData
-							+ "', `pendings` = '"
-							+ (fullInv.isEmpty() ? ""
-									: buildPendString(fullInv)) + "', "
-							+ "`x`= '" + p.getLocation().getBlockX() + "', "
-							+ "`y`= '" + p.getLocation().getBlockY() + "', "
-							+ "`z`= '" + p.getLocation().getBlockZ()
-							+ "' WHERE `id`= '" + r.getInt("id") + "';");
+					this.plugin.MYSQLDB.queryUpdate(String.format(
+							Constants.REQ_UPDATE_INV, this.plugin.dbTable,
+							invData, (fullInv.isEmpty() ? ""
+									: buildPendString(fullInv)), p
+									.getLocation().getBlockX(), p.getLocation()
+									.getBlockY(), p.getLocation().getBlockZ(),
+							r.getInt("id")));
 
 				} else {
-					String invData = buildInvString(p.getInventory());
+					invData = buildInvString(p.getInventory());
 
-					this.plugin.MYSQLDB
-							.queryUpdate("INSERT INTO `"
-									+ this.plugin.dbTable
-									+ "`(`owner`, `world`, `inventory`, `pendings`, `x`, `y`, `z`) VALUES ('"
-									+ p.getName() + "','"
-									+ p.getWorld().getName() + "','" + invData
-									+ "','','" + p.getLocation().getBlockX()
-									+ "','" + p.getLocation().getBlockY()
-									+ "','" + p.getLocation().getBlockZ()
-									+ "')");
-					this.plugin.MYSQLDB.queryUpdate("INSERT INTO `"
-							+ this.plugin.dbTable + "_users"
-							+ "`(`name`, `password`) VALUES ('" + p.getName()
-							+ "', '')");
+					this.plugin.MYSQLDB.queryUpdate(String.format(
+							Constants.REQ_INSERT_INV, this.plugin.dbTable, p
+									.getName(), p.getWorld().getName(),
+							invData, p.getLocation().getBlockX(), p
+									.getLocation().getBlockY(), p.getLocation()
+									.getBlockZ()));
+
+					this.plugin.MYSQLDB.queryUpdate(String.format(
+							Constants.REQ_INSERT_USER, this.plugin.dbTable,
+							p.getName()));
 				}
+
+				if (isbackup)
+					this.plugin.MYSQLDB.queryUpdate(String.format(
+							Constants.REQ_INSERT_BACKUP, this.plugin.dbTable, p
+									.getName(), p.getWorld().getName(), p
+									.getLocation().getBlockX(), p.getLocation()
+									.getBlockY(), p.getLocation().getBlockZ(),
+							invData));
+				
 			} catch (Exception ex) {
 				Main.logException(ex,
 						"exception in playerlogic - check players");
@@ -286,11 +346,13 @@ public class CoreSQLProcess {
 				if (!usualChecks(c))
 					return;
 
-				String q = "SELECT * FROM `" + this.plugin.dbTable + "` WHERE `x` ='" + c.getX() + "'" + " AND `y` ='" + c.getY() + "'" + " AND `z` ='" + c.getZ() + "'";
-				if(this.plugin.multiworld){
-					 q += " AND `world` = '" + c.getWorld().getName() + "';";
-				}else{
-					 q += ";";
+				String q = "SELECT * FROM `" + this.plugin.dbTable
+						+ "` WHERE `x` ='" + c.getX() + "'" + " AND `y` ='"
+						+ c.getY() + "'" + " AND `z` ='" + c.getZ() + "'";
+				if (this.plugin.multiworld) {
+					q += " AND `world` = '" + c.getWorld().getName() + "';";
+				} else {
+					q += ";";
 				}
 				r = this.plugin.MYSQLDB.query(q);
 
