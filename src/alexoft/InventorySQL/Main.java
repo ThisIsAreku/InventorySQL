@@ -29,6 +29,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import alexoft.InventorySQL.database.ConnectionManager;
+import alexoft.InventorySQL.database.CoreSQLItem;
+import alexoft.InventorySQL.database.CoreSQLProcess;
 import alexoft.commons.UpdateChecker;
 
 @SuppressWarnings("unused")
@@ -37,28 +40,11 @@ public class Main extends JavaPlugin {
 	public static boolean debug = false;
 	public static final String TABLE_VERSION = "1.2";
 
-	public String dbDatabase = null;
-	public String dbHost = null;
-	public String dbPass = null;
-	public String dbTable = null;
-	public String dbUser = null;
-
-	public boolean check_plugin_updates = true;
-	public boolean checkChest = false;
-	public boolean noCreative = true;
-	public boolean multiworld = true;
-	public int afterLoginDelay = 20;
-
-	public boolean backup_enabled = true;
-	public long backup_interval = 0;
-	public int backup_cleanup_days = 0;
-
-	public long check_interval = 0;
+	public static int reload_count = -1; //Initialized to -1 for the first pseudo-reload
 
 	private InventorySQLPlayerListener playerListener;
 	private InventorySQLCommandListener commandListener;
 	private CoreSQLProcess coreSQLProcess;
-	public Database MYSQLDB;
 	public Boolean ready = true;
 
 	public static void log(Level level, String m) {
@@ -124,34 +110,11 @@ public class Main extends JavaPlugin {
 		log("= " + this.getDescription().getWebsite() + " =");
 
 		try {
-			this.loadConfig();
+			new Config(this);
 		} catch (Exception e) {
 			logException(e, "Unable to load config");
-			this.ready = false;
 		}
-		try {
-			if (this.ready) {
-				MYSQLDB = new Database("jdbc:mysql://" + this.dbHost + "/"
-						+ this.dbDatabase, this.dbUser, this.dbPass);
-
-				log("MySQL connection successful");
-				checkUpdateTable();
-			} else {
-				log(Level.SEVERE, "MySQL configuration error");
-			}
-		} catch (SQLException ex) {
-			// Main.logException(ex, "mysql init");
-			log(Level.SEVERE, "MySQL connection failed");
-			this.ready = false;
-		} catch (ClassNotFoundException e) {
-			Main.logException(e, "mysql init");
-			log(Level.SEVERE, "MySQL connection failed");
-			this.ready = false;
-		}
-
-		if (!this.ready)
-			log(Level.SEVERE, "check the config and use /invsql reload");
-
+		
 		this.coreSQLProcess = new CoreSQLProcess(this);
 		this.playerListener = new InventorySQLPlayerListener(this);
 		this.commandListener = new InventorySQLCommandListener(this);
@@ -160,8 +123,10 @@ public class Main extends JavaPlugin {
 		this.getCommand("ichk").setExecutor(commandListener);
 
 		startMetrics();
-		if (this.check_plugin_updates)
+		if (Config.check_plugin_updates)
 			startUpdate();
+
+		reload();
 
 		// debug code to pring pretty-formated ids
 		// used to update the webui
@@ -199,236 +164,26 @@ public class Main extends JavaPlugin {
 	}
 
 	public void reload() {
+		reload_count++;
 		try {
-			this.loadConfig();
+			new Config(this);
 		} catch (Exception e) {
 			logException(e, "Unable to load config");
-			this.ready = false;
-		}
-		try {
-			if (this.ready) {
-				MYSQLDB = new Database("jdbc:mysql://" + this.dbHost + "/"
-						+ this.dbDatabase, this.dbUser, this.dbPass);
-
-				log("MySQL connection successful");
-			} else {
-				log(Level.SEVERE, "MySQL configuration error");
-			}
-		} catch (SQLException ex) {
-			Main.logException(ex, "mysql init");
-			log(Level.SEVERE, "MySQL connection failed");
-			this.ready = false;
-		} catch (ClassNotFoundException e) {
-			Main.logException(e, "mysql init");
-			log(Level.SEVERE, "MySQL connection failed");
-			this.ready = false;
-		}
-
-		if (!this.ready) {
-			log(Level.SEVERE, "check the config and use /invsql reload");
-		} else {
-			this.getServer().getScheduler()
-					.scheduleAsyncDelayedTask(this, new Runnable() {
-
-						@Override
-						public void run() {
-							log("Checking table..");
-							if (checkUpdateTable()) {
-								ready = true;
-								coreSQLProcess.reload();
-							} else {
-								log(Level.SEVERE,
-										"Cannot update/create table !");
-								log(Level.SEVERE,
-										"check the config and use /invsql reload");
-								ready = false;
-							}
-						}
-
-					});
-		}
-	}
-
-	public boolean checkUpdateTable() {
-		try {
-			check_table_version("");
-			check_table_version("_users");
-			if (this.backup_enabled)
-				check_table_version("_backup");
-			return true;
-		} catch (Exception ex) {
-			Main.logException(ex, "table need update?");
-		}
-		return false;
-	}
-
-	private void check_table_version(String selector) throws SQLException,
-			EmptyException {
-		if (!this.MYSQLDB.tableExist(this.dbTable + selector)) {
-			log("Creating '" + this.dbTable + selector + "' table...");
-			String create = "CREATE TABLE IF NOT EXISTS `"
-					+ this.dbTable
-					+ selector
-					+ "` (`id` int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=utf8;";
-			if (this.MYSQLDB.queryUpdate(create) != 0) {
-				log(Level.SEVERE,
-						"Cannot create users table, check your config !");
-			} else {
-				update_table_fields(selector);
-			}
-		} else {
-			ResultSet rs = this.MYSQLDB.query("SHOW CREATE TABLE `"
-					+ this.dbTable + selector + "`");
-			rs.first();
-			String comment = rs.getString(2);
-			int p = comment.indexOf("COMMENT='");
-			if (p == -1) {
-				update_table_fields(selector);
-			} else {
-				comment = comment
-						.substring(p + 9, comment.indexOf('\'', p + 9));
-
-				if (!("table format : " + Main.TABLE_VERSION).equals(comment)) {
-					update_table_fields(selector);
-				}
-			}
-			rs.close();
-		}
-	}
-
-	private void update_table_fields(String selector) {
-		log("Table '" + this.dbTable + selector + "' need update");
-		String query = read(this.getResource("alexoft/InventorySQL/schema"
-				+ selector + ".sql"));
-		query = query.replace("%%TABLENAME%%", this.dbTable);
-		for (String r : query.split(";")) {
-			this.MYSQLDB.queryUpdateQuiet(r);
-		}
-		query = "ALTER IGNORE TABLE `%%TABLENAME%%` COMMENT = 'table format : %%VERSION%%'"
-				.replace("%%TABLENAME%%", this.dbTable + selector).replace(
-						"%%VERSION%%", Main.TABLE_VERSION);
-		this.MYSQLDB.queryUpdateQuiet(query);
-		log("'" + this.dbTable + selector + "' table: update done");
-	}
-
-	public void loadConfig() throws FileNotFoundException, IOException,
-			InvalidConfigurationException {
-
-		File file = new File(this.getDataFolder(), "config.yml");
-		if (!this.getDataFolder().exists())
-			this.getDataFolder().mkdirs();
-		if (!file.exists())
-			copy(this.getResource("config.yml"), file);
-
-		this.getConfig().load(file);
-
-		YamlConfiguration defaults = new YamlConfiguration();
-		defaults.load(this.getResource("config.yml"));
-		this.getConfig().addDefaults(defaults);
-		this.getConfig().options().copyDefaults(true);
-
-		this.ready = true;
-
-		this.dbHost = this.getConfig().getString("mysql.host");
-		this.dbUser = this.getConfig().getString("mysql.user");
-		this.dbPass = this.getConfig().getString("mysql.pass");
-		this.dbDatabase = this.getConfig().getString("mysql.db");
-		this.dbTable = this.getConfig().getString("mysql.table");
-		this.check_interval = this.getConfig().getInt("check-interval");
-		this.check_plugin_updates = this.getConfig().getBoolean(
-				"check-plugin-updates");
-		this.noCreative = this.getConfig().getBoolean("no-creative");
-		this.afterLoginDelay = this.getConfig().getInt("after-login-delay");
-		this.multiworld = this.getConfig().getBoolean("multiworld");
-
-		this.backup_enabled = this.getConfig().getBoolean("backup.enabled");
-		this.backup_interval = this.getConfig().getInt("backup.interval");
-		this.backup_cleanup_days = this.getConfig().getInt(
-				"backup.cleanup-days");
-
-		Main.debug = this.getConfig().getBoolean("debug");
-
-		this.check_interval *= 20;
-		this.backup_interval *= 20;
-		this.afterLoginDelay *= 20;
-		this.getConfig().save(file);
-	}
-
-	private void updateUser(Player[] players, Chest[] chests, CommandSender cs,
-			int delay) {
-		if (!this.ready)
+			this.Disable();
 			return;
-		final CoreSQLItem i = new CoreSQLItem(players, chests, cs);
-		this.getServer().getScheduler()
-				.scheduleSyncDelayedTask(this, new Runnable() {
-					@Override
-					public void run() {
-						coreSQLProcess.addTask(i);
-					}
-				}, delay);
-	}
-
-	public void invokeAllCheck(CommandSender cs) {
-		updateUser(null, null, cs, 5);
-	}
-
-	public void invokeAllCheck(int delay, CommandSender cs) {
-		updateUser(null, null, cs, delay);
-	}
-
-	public void invokeCheck(Player[] players, CommandSender cs) {
-		updateUser(players, null, cs, 5);
-	}
-
-	public void invokeCheck(Player[] players, int delay, CommandSender cs) {
-		updateUser(players, null, cs, delay);
-	}
-
-	public void invokeCheck(Chest[] chests, CommandSender cs) {
-		updateUser(null, chests, cs, 5);
-	}
-
-	public void invokeCheck(Chest[] chests, int delay, CommandSender cs) {
-		updateUser(null, chests, cs, delay);
-	}
-
-	public void invokeCheck(Player[] players, Chest[] chests, CommandSender cs) {
-		updateUser(players, chests, cs, 5);
-	}
-
-	public void invokeCheck(Player[] players, Chest[] chests, int delay,
-			CommandSender cs) {
-		updateUser(players, chests, cs, delay);
-	}
-
-	private void copy(InputStream src, File dst) throws IOException {
-		OutputStream out = new FileOutputStream(dst);
-
-		// Transfer bytes from in to out
-		byte[] buf = new byte[1024];
-		int len;
-		while ((len = src.read(buf)) > 0) {
-			out.write(buf, 0, len);
 		}
-		src.close();
-		out.close();
-	}
 
-	private String read(InputStream src) {
-		Scanner reader = new Scanner(src);
-		String s = "";
-		String l = "";
-		while (reader.hasNextLine()) {
-			l = reader.nextLine();
-			if (!l.startsWith("#")) {
-				s += System.getProperty("line.separator") + l;
-			}
-		}
 		try {
-			src.close();
-			reader.close();
-		} catch (Exception e) {
+			this.coreSQLProcess.reload();
+		} catch (ClassNotFoundException e) {
+			log(Level.SEVERE, "Cannot found MySQL Class !");
+			this.Disable();
+			return;
 		}
-		return s;
 	}
+
+	public CoreSQLProcess getCoreSQLProcess() {
+		return this.coreSQLProcess;
+	}
+
 }

@@ -9,6 +9,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import alexoft.InventorySQL.database.CoreSQLItem;
+
 public class InventorySQLCommandListener implements CommandExecutor {
 	public Main plugin;
 
@@ -23,35 +25,52 @@ public class InventorySQLCommandListener implements CommandExecutor {
 		if (cs instanceof Player) {
 			isNotPlayer = false;
 		}
-		
-		if (!"ichk".equals(label) && ((args.length == 0) || (args.length == 1 && "help".equals(args[0])))) {
+
+		if (!"ichk".equals(label)
+				&& ((args.length == 0) || (args.length == 1 && "help"
+						.equals(args[0])))) {
 			sendMessage(cs, ChatColor.GREEN + "Usage :");
-			sendMessage(cs, ChatColor.GREEN	+ " * /invSQL check : update yourself");
+			sendMessage(cs, ChatColor.GREEN
+					+ " * /invSQL check : update yourself");
 			if (cs.isOp()) {
-				sendMessage(cs, ChatColor.GREEN + " * /invSQL check all : update all players");
-				sendMessage(cs,	ChatColor.GREEN	+ " * /invSQL check <player>, <player>, <player>, .. : update specified players");
-				sendMessage(cs, ChatColor.GREEN	+ " * /invSQL reload : reload config");
+				sendMessage(cs, ChatColor.GREEN
+						+ " * /invSQL check all : update all players");
+				sendMessage(
+						cs,
+						ChatColor.GREEN
+								+ " * /invSQL check <player>, <player>, <player>, .. : update specified players");
+				sendMessage(cs, ChatColor.GREEN
+						+ " * /invSQL reload : reload config");
 			}
 			return true;
 		}
 
-		if (cs.isOp() && isNotPlayer && (args.length == 1 && "reload".equals(args[0]))) {
+		if (cs.isOp() && isNotPlayer
+				&& (args.length == 1 && "reload".equals(args[0]))) {
 			sendMessage(cs, ChatColor.YELLOW + "Reloading InventorySQL");
 			this.plugin.reload();
 			return true;
 		}
-		
-		if(!this.plugin.ready){
-			sendMessage(cs, ChatColor.RED + "Error in config, please check and use /invsql reload");
+
+		if (!this.plugin.ready) {
+			sendMessage(cs, ChatColor.RED
+					+ "Error in config, please check and use /invsql reload");
 			return true;
 		}
-		
+
 		if ("ichk".equals(label)) {
 			if (isNotPlayer) {
-				sendMessage(cs, ChatColor.RED + "You cannot check yourself as a Console !");
+				sendMessage(cs, ChatColor.RED
+						+ "You cannot check yourself as a Console !");
 			} else {
-				sendMessage(cs,	ChatColor.GREEN + Main.getMessage("check-yourself"));
-				this.plugin.invokeCheck(new Player[] { (Player) cs }, cs);
+				sendMessage(cs,
+						ChatColor.GREEN + Main.getMessage("check-yourself"));
+				this.plugin
+						.getCoreSQLProcess()
+						.runCheckThisTask(
+								new CoreSQLItem(new Player[] { (Player) cs })
+										.setCommandSender(cs),
+								0);
 			}
 			return true;
 		}
@@ -62,12 +81,10 @@ public class InventorySQLCommandListener implements CommandExecutor {
 						+ " * /invSQL pw <password> : change your password");
 				return true;
 			}
-			try {
-				this.plugin.MYSQLDB.queryUpdate("UPDATE `"
-						+ this.plugin.dbTable + "_users` SET `password`=MD5('"
-						+ args[1] + "') WHERE `name` = '" + cs.getName() + "'");
+			if (this.plugin.getCoreSQLProcess().updatePlayerPassword(
+					cs.getName(), combine(args, " "))) {
 				sendMessage(cs, ChatColor.BLUE + "Password changed");
-			} catch (EmptyException e) {
+			} else {
 				sendMessage(cs, ChatColor.RED + "Unable to change password");
 			}
 		}
@@ -82,7 +99,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 							cs,
 							ChatColor.GREEN
 									+ Main.getMessage("check-all-players"));
-					this.plugin.invokeAllCheck(null);
+					this.plugin.getCoreSQLProcess().runCheckAllTask(0);
 					return true;
 				}
 				Player pT;
@@ -101,7 +118,12 @@ public class InventorySQLCommandListener implements CommandExecutor {
 							ChatColor.GREEN
 									+ Main.getMessage("check-n-players",
 											p.size()));
-					this.plugin.invokeCheck(p.toArray(new Player[] {}), cs);
+					this.plugin
+							.getCoreSQLProcess()
+							.runCheckThisTask(
+									new CoreSQLItem(p.toArray(new Player[] {}))
+											.setCommandSender(cs),
+									0);
 				} else {
 					sendMessage(cs,
 							ChatColor.GREEN + Main.getMessage("no-online"));
@@ -113,7 +135,13 @@ public class InventorySQLCommandListener implements CommandExecutor {
 				} else {
 					sendMessage(cs,
 							ChatColor.GREEN + Main.getMessage("check-yourself"));
-					this.plugin.invokeCheck(new Player[] { (Player) cs }, cs);
+					this.plugin
+							.getCoreSQLProcess()
+							.runCheckThisTask(
+									new CoreSQLItem(
+											new Player[] { (Player) cs })
+											.setCommandSender(cs),
+									0);
 				}
 			}
 			return true;
@@ -124,5 +152,17 @@ public class InventorySQLCommandListener implements CommandExecutor {
 	public void sendMessage(CommandSender cs, String m) {
 		cs.sendMessage("[InventorySQL] " + m);
 	}
+	public static String combine(String[] s, String glue)
+	{
+	  int k=s.length;
+	  if (k==0)
+	    return null;
+	  StringBuilder out=new StringBuilder();
+	  out.append(s[1]);
+	  for (int x=2;x<k;++x)
+	    out.append(glue).append(s[x]);
+	  return out.toString();
+	}
+
 
 }

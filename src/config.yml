@@ -2,8 +2,8 @@ check-interval: 600
 after-login-delay: 1
 check-plugin-updates: true
 no-creative: true
-check-chest: false
 multiworld: true
+lightweight-mode: false
 mysql:
   host: localhost:3306
   user: root
