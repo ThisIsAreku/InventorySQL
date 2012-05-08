@@ -59,12 +59,12 @@ public class SQLCheck implements Runnable {
 	@Override
 	public void run() {
 		try {
-			if(manualCheck){
+			if (manualCheck) {
 				Main.d("Running manual check");
-			}else{
+			} else {
 				Main.d("Running scheduled check");
 			}
-			
+
 			if (manualCheck && (runThis != null)) {
 				if (runThis.hasChestData() && Config.checkChest) {
 					checkChests(runThis);
@@ -103,13 +103,19 @@ public class SQLCheck implements Runnable {
 												" OR id="));
 					}
 
-					if (cList.size() > 0)
+					if (cList.size() > 0){
 						checkChests(new CoreSQLItem(cList.toArray(new Chest[0])));
+					}else{
+						Main.d("No chests to check");
+					}
 				}
 
 				Player[] pList = this.parent.getOnlinePlayers();
-				if (pList.length > 0)
+				if (pList.length > 0){
 					checkPlayers(new CoreSQLItem(pList));
+				}else{
+					Main.d("No players to check");
+				}
 			}
 		} catch (Exception ex) {
 			Main.logException(ex, "exception in playerlogic - check all");
@@ -154,12 +160,12 @@ public class SQLCheck implements Runnable {
 				r = conn.createStatement().executeQuery(q);
 
 				if (r.first()) {
-					List<ActionStack> fullInv = new ArrayList<ActionStack>();
+					List<ActionStack> remainsInv = new ArrayList<ActionStack>();
 					String pendingData = r.getString("pendings");
 
 					if (!"".equals(pendingData)) {
-						Main.log(Level.WARNING,
-								"pendings items for " + p.getName());
+						Main.d("pendings items for " + p.getName() + " : "
+								+ pendingData);
 
 						final List<ItemStack> addStack = new ArrayList<ItemStack>();
 						final List<ItemStack> removeStack = new ArrayList<ItemStack>();
@@ -177,7 +183,32 @@ public class SQLCheck implements Runnable {
 										+ "' in pendings data, ignored");
 							}
 
-							Future<HashMap<Integer, ItemStack>> f = this.parent
+							/*****************/
+							/** Add process **/
+							/*****************/
+							Future<HashMap<Integer, ItemStack>> fAdd = this.parent
+									.callSyncMethod(new Callable<HashMap<Integer, ItemStack>>() {
+										@Override
+										public HashMap<Integer, ItemStack> call()
+												throws Exception {
+											return p.getInventory()
+													.addItem(
+															addStack.toArray(new ItemStack[0]));
+										}
+									});
+							HashMap<Integer, ItemStack> remainsAdd = fAdd.get();
+							for (Entry<Integer, ItemStack> e : remainsAdd
+									.entrySet()) {
+								remainsInv.add(new ActionStack(e.getValue(),
+										"+"));
+							}
+							pendings += remainsAdd.size();
+							added += addStack.size() - remainsAdd.size();
+
+							/*****************/
+							/** rm process **/
+							/*****************/
+							Future<HashMap<Integer, ItemStack>> fRemove = this.parent
 									.callSyncMethod(new Callable<HashMap<Integer, ItemStack>>() {
 										@Override
 										public HashMap<Integer, ItemStack> call()
@@ -188,29 +219,16 @@ public class SQLCheck implements Runnable {
 																	.toArray(new ItemStack[0]));
 										}
 									});
-							for (Entry<Integer, ItemStack> e : f.get()
+							HashMap<Integer, ItemStack> remainsRemove = fRemove
+									.get();
+							for (Entry<Integer, ItemStack> e : remainsRemove
 									.entrySet()) {
-								fullInv.add(new ActionStack(e.getValue(), "-"));
+								remainsInv.add(new ActionStack(e.getValue(),
+										"-"));
 							}
-							pendings += f.get().size();
-							removed += removeStack.size() - f.get().size();
-
-							f = this.parent
-									.callSyncMethod(new Callable<HashMap<Integer, ItemStack>>() {
-										@Override
-										public HashMap<Integer, ItemStack> call()
-												throws Exception {
-											return p.getInventory()
-													.addItem(
-															addStack.toArray(new ItemStack[0]));
-										}
-									});
-							for (Entry<Integer, ItemStack> e : f.get()
-									.entrySet()) {
-								fullInv.add(new ActionStack(e.getValue(), "+"));
-							}
-							pendings += f.get().size();
-							added += addStack.size() - f.get().size();
+							pendings += remainsRemove.size();
+							removed += removeStack.size()
+									- remainsRemove.size();
 						}
 
 						if (i.getCommandSender() != null) {
@@ -237,18 +255,18 @@ public class SQLCheck implements Runnable {
 
 					invData = CoreSQLProcess.buildInvString(p.getInventory());
 
-					if (fullInv.size() != 0) {
+					if (remainsInv.size() != 0) {
 						Main.log(Level.WARNING, "\t Unable to add/remove "
-								+ fullInv.size() + " item(s)");
+								+ remainsInv.size() + " item(s)");
 					}
+					String pendingsAfter = (remainsInv.isEmpty() ? ""
+							: CoreSQLProcess.buildPendString(remainsInv));
+
+					Main.d("pendingsAfter: " + pendingsAfter);
 
 					conn.createStatement().executeUpdate(
-							String.format(
-									Constants.REQ_UPDATE_INV,
-									Config.dbTable,
-									invData,
-									(fullInv.isEmpty() ? "" : CoreSQLProcess
-											.buildPendString(fullInv)), p
+							String.format(Constants.REQ_UPDATE_INV,
+									Config.dbTable, invData, pendingsAfter, p
 											.getLocation().getBlockX(), p
 											.getLocation().getBlockY(), p
 											.getLocation().getBlockZ(), r
