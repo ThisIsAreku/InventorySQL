@@ -69,7 +69,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 						.getCoreSQLProcess()
 						.runCheckThisTask(
 								new CoreSQLItem(new Player[] { (Player) cs })
-										.setCommandSender(cs),
+										.setCommandSender(cs), true,
 								0);
 			}
 			return true;
@@ -122,7 +122,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 							.getCoreSQLProcess()
 							.runCheckThisTask(
 									new CoreSQLItem(p.toArray(new Player[] {}))
-											.setCommandSender(cs),
+											.setCommandSender(cs), true,
 									0);
 				} else {
 					sendMessage(cs,
@@ -140,7 +140,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 							.runCheckThisTask(
 									new CoreSQLItem(
 											new Player[] { (Player) cs })
-											.setCommandSender(cs),
+											.setCommandSender(cs), true,
 									0);
 				}
 			}

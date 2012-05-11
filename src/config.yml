@@ -21,3 +21,10 @@ messages:
   check-n-players: 'Checking %s player(s)'
   check-all-players: 'Checking all players...'
   check-yourself: 'Checking yourself...'
+update-events:
+- join
+- quit
+- changeworld
+- respawn
+- bedenter
+- bedleave

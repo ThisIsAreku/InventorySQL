@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -28,9 +30,12 @@ public class Config {
 	public static boolean backup_enabled = true;
 	public static long backup_interval = 0;
 	public static int backup_cleanup_days = 0;
+	
+	public static List<String> update_events = new ArrayList<String>();
 
 	public static long check_interval = 0;
 	
+	@SuppressWarnings("unchecked")
 	public Config(Main plugin) throws IOException, InvalidConfigurationException {
 		File file = new File(plugin.getDataFolder(), "config.yml");
 		if (!plugin.getDataFolder().exists())
@@ -61,6 +66,8 @@ public class Config {
 		Config.backup_interval = plugin.getConfig().getInt("backup.interval");
 		Config.backup_cleanup_days = plugin.getConfig().getInt(
 				"backup.cleanup-days");
+		
+		Config.update_events = (ArrayList<String>) plugin.getConfig().getList("update-events");
 
 		Boolean lm = plugin.getConfig().getBoolean("lightweight-mode");
 		if ((Main.reload_count > 0) && (lm != Config.lightweight_mode)) {

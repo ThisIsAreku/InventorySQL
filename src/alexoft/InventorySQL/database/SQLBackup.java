@@ -1,7 +1,6 @@
 package alexoft.InventorySQL.database;
 
 import java.sql.SQLException;
-import java.util.TimerTask;
 
 import org.bukkit.entity.Player;
 

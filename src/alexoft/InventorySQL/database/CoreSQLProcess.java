@@ -87,9 +87,9 @@ public class CoreSQLProcess implements Runnable {
 		this.connectionManager = null;
 	}
 
-	public void runCheckThisTask(CoreSQLItem i, int delay) {
+	public void runCheckThisTask(CoreSQLItem i, boolean doGive, int delay) {
 		if (this.databaseReady)
-			this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new SQLCheck(this).manualCheck(i), delay);
+			this.plugin.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, new SQLCheck(this).manualCheck(i, doGive), delay);
 	}
 
 	public void runCheckAllTask(int delay) {

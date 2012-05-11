@@ -110,6 +110,7 @@ public class Main extends JavaPlugin {
 		log("= " + this.getDescription().getWebsite() + " =");
 
 		try {
+			log("Loading config...");
 			new Config(this);
 		} catch (Exception e) {
 			logException(e, "Unable to load config");

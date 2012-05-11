@@ -28,6 +28,7 @@ import alexoft.InventorySQL.Main;
 public class SQLCheck implements Runnable {
 	private CoreSQLProcess parent;
 	private CoreSQLItem runThis = null;
+	private boolean doGive = true;
 	private boolean manualCheck = false;
 	private JDCConnection conn = null;
 
@@ -36,8 +37,9 @@ public class SQLCheck implements Runnable {
 		this.parent = parent;
 	}
 
-	public SQLCheck manualCheck(CoreSQLItem i) {
+	public SQLCheck manualCheck(CoreSQLItem i, boolean doGive) {
 		this.runThis = i;
+		this.doGive = doGive;
 		return manualCheck();
 	}
 
@@ -103,17 +105,17 @@ public class SQLCheck implements Runnable {
 												" OR id="));
 					}
 
-					if (cList.size() > 0){
+					if (cList.size() > 0) {
 						checkChests(new CoreSQLItem(cList.toArray(new Chest[0])));
-					}else{
+					} else {
 						Main.d("No chests to check");
 					}
 				}
 
 				Player[] pList = this.parent.getOnlinePlayers();
-				if (pList.length > 0){
+				if (pList.length > 0) {
 					checkPlayers(new CoreSQLItem(pList));
-				}else{
+				} else {
 					Main.d("No players to check");
 				}
 			}
@@ -122,6 +124,7 @@ public class SQLCheck implements Runnable {
 		}
 
 		if (manualCheck) {
+			doGive = true;
 			runThis = null;
 			manualCheck = false;
 		}
@@ -163,24 +166,27 @@ public class SQLCheck implements Runnable {
 					List<ActionStack> remainsInv = new ArrayList<ActionStack>();
 					String pendingData = r.getString("pendings");
 
-					if (!"".equals(pendingData)) {
-						Main.d("pendings items for " + p.getName() + " : "
-								+ pendingData);
+					if (doGive) {
+						if (!"".equals(pendingData)) {
+							Main.d("pendings items for " + p.getName() + " : "
+									+ pendingData);
 
-						final List<ItemStack> addStack = new ArrayList<ItemStack>();
-						final List<ItemStack> removeStack = new ArrayList<ItemStack>();
+							final List<ItemStack> addStack = new ArrayList<ItemStack>();
+							final List<ItemStack> removeStack = new ArrayList<ItemStack>();
 
-						for (ActionStack pendingStack : CoreSQLProcess
-								.buildPendList(pendingData)) {
-							if ("+".equals(pendingStack.params())) {
-								addStack.add(pendingStack.item());
-							} else if ("-".equals(pendingStack.params())) {
-								removeStack.add(pendingStack.item());
-							} else {
-								Main.log(Level.INFO, "bad command '"
-										+ pendingStack.params()
-										+ "' for player '" + p.getName()
-										+ "' in pendings data, ignored");
+							List<ActionStack> pendList = CoreSQLProcess
+									.buildPendList(pendingData);
+							for (ActionStack pendingStack : pendList) {
+								if ("+".equals(pendingStack.params())) {
+									addStack.add(pendingStack.item());
+								} else if ("-".equals(pendingStack.params())) {
+									removeStack.add(pendingStack.item());
+								} else {
+									Main.log(Level.INFO, "bad command '"
+											+ pendingStack.params()
+											+ "' for player '" + p.getName()
+											+ "' in pendings data, ignored");
+								}
 							}
 
 							/*****************/
@@ -229,28 +235,29 @@ public class SQLCheck implements Runnable {
 							pendings += remainsRemove.size();
 							removed += removeStack.size()
 									- remainsRemove.size();
+
+							if (i.getCommandSender() != null) {
+								i.getCommandSender().sendMessage(
+										"[InventorySQL] "
+												+ ChatColor.GREEN
+												+ "("
+												+ p.getName()
+												+ ") "
+												+ Main.getMessage("modif",
+														removed, added,
+														pendings));
+							}
+
+						} else {
+
+							if (i.getCommandSender() != null) {
+								i.getCommandSender().sendMessage(
+										"[InventorySQL] " + ChatColor.GREEN
+												+ "(" + p.getName() + ") "
+												+ Main.getMessage("no-modif"));
+							}
+
 						}
-
-						if (i.getCommandSender() != null) {
-							i.getCommandSender().sendMessage(
-									"[InventorySQL] "
-											+ ChatColor.GREEN
-											+ "("
-											+ p.getName()
-											+ ") "
-											+ Main.getMessage("modif", removed,
-													added, pendings));
-						}
-
-					} else {
-
-						if (i.getCommandSender() != null) {
-							i.getCommandSender().sendMessage(
-									"[InventorySQL] " + ChatColor.GREEN + "("
-											+ p.getName() + ") "
-											+ Main.getMessage("no-modif"));
-						}
-
 					}
 
 					invData = CoreSQLProcess.buildInvString(p.getInventory());
@@ -262,7 +269,12 @@ public class SQLCheck implements Runnable {
 					String pendingsAfter = (remainsInv.isEmpty() ? ""
 							: CoreSQLProcess.buildPendString(remainsInv));
 
-					Main.d("pendingsAfter: " + pendingsAfter);
+					if (doGive) {
+						Main.d("pendingsAfter: " + pendingsAfter);
+					} else {
+						Main.d("no give/remove");
+						pendingsAfter = pendingData;
+					}
 
 					conn.createStatement().executeUpdate(
 							String.format(Constants.REQ_UPDATE_INV,
