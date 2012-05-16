@@ -22,9 +22,9 @@ messages:
   check-all-players: 'Checking all players...'
   check-yourself: 'Checking yourself...'
 update-events:
-- join
-- quit
-- changeworld
-- respawn
-- bedenter
-- bedleave
+  - join
+  - quit
+  - changeworld
+  - respawn
+  - bedenter
+  - bedleave

@@ -30,13 +30,14 @@ public class Config {
 	public static boolean backup_enabled = true;
 	public static long backup_interval = 0;
 	public static int backup_cleanup_days = 0;
-	
+
 	public static List<String> update_events = new ArrayList<String>();
 
 	public static long check_interval = 0;
-	
+
 	@SuppressWarnings("unchecked")
-	public Config(Main plugin) throws IOException, InvalidConfigurationException {
+	public Config(Main plugin) throws IOException,
+			InvalidConfigurationException {
 		File file = new File(plugin.getDataFolder(), "config.yml");
 		if (!plugin.getDataFolder().exists())
 			plugin.getDataFolder().mkdirs();
@@ -66,8 +67,14 @@ public class Config {
 		Config.backup_interval = plugin.getConfig().getInt("backup.interval");
 		Config.backup_cleanup_days = plugin.getConfig().getInt(
 				"backup.cleanup-days");
-		
-		Config.update_events = (ArrayList<String>) plugin.getConfig().getList("update-events");
+
+		Config.update_events = (ArrayList<String>) plugin.getConfig().getList(
+				"update-events");
+		if (Config.update_events == null) {
+			Config.update_events = new ArrayList<String>();
+			Main.log(Level.WARNING,
+					"No update event ! Data will only be updated when using the command");
+		}
 
 		Boolean lm = plugin.getConfig().getBoolean("lightweight-mode");
 		if ((Main.reload_count > 0) && (lm != Config.lightweight_mode)) {
@@ -87,7 +94,6 @@ public class Config {
 		Config.afterLoginDelay *= 20;
 		plugin.getConfig().save(file);
 	}
-
 
 	private void copy(InputStream src, File dst) throws IOException {
 		OutputStream out = new FileOutputStream(dst);
