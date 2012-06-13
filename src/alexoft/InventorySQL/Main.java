@@ -1,46 +1,22 @@
 package alexoft.InventorySQL;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
-import org.bukkit.Material;
-import org.bukkit.block.Chest;
-import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.command.ColouredConsoleSender;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import alexoft.InventorySQL.database.ConnectionManager;
-import alexoft.InventorySQL.database.CoreSQLItem;
 import alexoft.InventorySQL.database.CoreSQLProcess;
 import alexoft.commons.UpdateChecker;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.plugin.java.JavaPlugin;
 
 @SuppressWarnings("unused")
 public class Main extends JavaPlugin {
 	public static Main instance;
-	public static boolean debug = false;
 	public static final String TABLE_VERSION = "1.2";
 
-	public static int reload_count = -1; //Initialized to -1 for the first pseudo-reload
+	public static int reload_count = -1; // Initialized to -1 for the first
+											// pseudo-reload
 
 	private InventorySQLPlayerListener playerListener;
 	private InventorySQLCommandListener commandListener;
@@ -52,7 +28,7 @@ public class Main extends JavaPlugin {
 	}
 
 	public static void d(Level level, String m) {
-		if (!debug)
+		if (!Config.debug)
 			return;
 		instance.getLogger().log(level, "[DEBUG] " + m);
 	}
@@ -115,7 +91,7 @@ public class Main extends JavaPlugin {
 		} catch (Exception e) {
 			logException(e, "Unable to load config");
 		}
-		
+
 		this.coreSQLProcess = new CoreSQLProcess(this);
 		this.playerListener = new InventorySQLPlayerListener(this);
 		this.commandListener = new InventorySQLCommandListener(this);
@@ -131,10 +107,17 @@ public class Main extends JavaPlugin {
 
 		// debug code to pring pretty-formated ids
 		// used to update the webui
-		if (Main.debug) {
+		if (Config.debug) {
 			for (Material m : Material.values()) {
 				System.out.println("$items[" + m.getId() + "] = '"
 						+ m.toString() + "';");
+			}
+			System.out.println("//----------------");
+			for (Enchantment e : Enchantment.values()) {
+				System.out.println("$ench[" + e.getId()
+						+ "] = array('name' => '" + e.getName()
+						+ "', 'startlevel' => " + e.getStartLevel()
+						+ ", 'maxlevel' => " + e.getMaxLevel() + ");");
 			}
 		}
 

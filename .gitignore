@@ -1,10 +1,6 @@
 /.classpath
 /.project
 /bin/
-/buildJAR.jardesc
-/target/classes/
-/target/maven-archiver/
-/nb-configuration.xml
 /*.jardesc
 /.settings/
-/target/generated-sources/
+/dist/

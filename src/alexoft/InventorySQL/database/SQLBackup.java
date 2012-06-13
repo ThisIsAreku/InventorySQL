@@ -1,12 +1,10 @@
 package alexoft.InventorySQL.database;
 
-import java.sql.SQLException;
-
-import org.bukkit.entity.Player;
-
 import alexoft.InventorySQL.Config;
 import alexoft.InventorySQL.Constants;
 import alexoft.InventorySQL.Main;
+import java.sql.SQLException;
+import org.bukkit.entity.Player;
 
 public class SQLBackup implements Runnable {
 	private CoreSQLProcess parent;

@@ -1,21 +1,20 @@
 package alexoft.InventorySQL.database;
 
 
+import alexoft.InventorySQL.Main;
 import java.io.Closeable;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Enumeration;
-import java.util.Vector;
-
-import alexoft.InventorySQL.Main;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConnectionManager implements Closeable {
 	private static ConnectionManager instance;
 	
 	private static int poolsize = 10;
 	private static long timeToLive = 300000;
-	private static Vector<JDCConnection> connections;
+	private static List<JDCConnection> connections;
 	private final ConnectionReaper reaper;
 	private final String url;
 	private final String user;
@@ -28,7 +27,7 @@ public class ConnectionManager implements Closeable {
 		this.user = user;
 		this.password = password;
 		//poolsize = Config.PoolSize;
-		connections = new Vector<JDCConnection>(poolsize);
+		connections = new ArrayList<JDCConnection>(poolsize);
 		reaper = new ConnectionReaper();
 		reaper.start();
 		instance = this;
@@ -41,9 +40,7 @@ public class ConnectionManager implements Closeable {
 	@Override
 	public synchronized void close() {
 		Main.d("Closing all MySQL connections");
-		final Enumeration<JDCConnection> conns = connections.elements();
-		while (conns.hasMoreElements()) {
-			final JDCConnection conn = conns.nextElement();
+                for (final JDCConnection conn : connections) {
 			connections.remove(conn);
 			conn.terminate();
 		}
@@ -82,7 +79,7 @@ public class ConnectionManager implements Closeable {
      * @param {JDCConnection} to remove
      */
 	public static synchronized void removeConn(Connection conn) {
-		connections.remove(conn);
+		connections.remove((JDCConnection) conn);
 	}
 
 	/**
@@ -91,12 +88,9 @@ public class ConnectionManager implements Closeable {
 	private synchronized void reapConnections() {
 		Main.d("Attempting to reap dead connections");
 		final long stale = System.currentTimeMillis() - timeToLive;
-		final Enumeration<JDCConnection> conns = connections.elements();
 		int count = 0;
 		int i = 1;
-		while (conns.hasMoreElements()) {
-			final JDCConnection conn = conns.nextElement();
-
+		for (final JDCConnection conn : connections) {
 			if (conn.inUse() && stale > conn.getLastUse() && !conn.isValid()) {
 				connections.remove(conn);
 				count++;

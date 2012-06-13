@@ -1,4 +1,5 @@
 <?php
+session_start();
 /***********************
  * InventorySQL php example
  * require .jar version 0.3.2
@@ -18,7 +19,8 @@ $pendings[] = array();
 $tmp[] = array();
 $index = 0;$isError = false;
 $message = '';
-
+if(isset($_POST['login'])){
+}
 if(isset($_GET['u'])){
 	$data = $MySQL->execute("SELECT * FROM `".$table."` WHERE `id`='".$MySQL->escape($_GET['u'])."';");
 }else{
@@ -80,6 +82,13 @@ if(isset($_GET['u'])) {
 </head>
 
 <body>
+<?php if(!isset($_SESSION['invsql_loggedin'])): ?>
+<form action="./" method="post">
+<input type="text" name="user" /><br />
+<input type="password" name="pw" /><br />
+<input type="submit" name="login" />
+</form>
+<?php else: ?>
 <form action="" method="get">
 <fieldset>
 <select name="u">
@@ -154,6 +163,7 @@ foreach ($items as $id => $item){
 	}else{
 		echo "<h2>Unknown id</h2>";
 	} ?>
+<?php endif; ?>
 <footer>
 Item list for minecraft <?php echo $items_version; ?>
 </footer>

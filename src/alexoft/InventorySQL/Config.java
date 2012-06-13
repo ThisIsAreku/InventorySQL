@@ -1,14 +1,9 @@
 package alexoft.InventorySQL;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
-
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -34,6 +29,10 @@ public class Config {
 	public static List<String> update_events = new ArrayList<String>();
 
 	public static long check_interval = 0;
+	
+	public static boolean allow_unsafe_ench = false;
+	
+	public static boolean debug = false;
 
 	@SuppressWarnings("unchecked")
 	public Config(Main plugin) throws IOException,
@@ -67,6 +66,10 @@ public class Config {
 		Config.backup_interval = plugin.getConfig().getInt("backup.interval");
 		Config.backup_cleanup_days = plugin.getConfig().getInt(
 				"backup.cleanup-days");
+		
+		Config.allow_unsafe_ench = plugin.getConfig().getBoolean("allow-unsafe-ench");
+		
+		Config.debug = plugin.getConfig().getBoolean("debug");
 
 		Config.update_events = (ArrayList<String>) plugin.getConfig().getList(
 				"update-events");
@@ -86,8 +89,6 @@ public class Config {
 			Main.log("InventorySQL is running in LIGHTWEIGHT MODE");
 		}
 		Config.lightweight_mode = lm;
-
-		Main.debug = plugin.getConfig().getBoolean("debug");
 
 		Config.check_interval *= 20;
 		Config.backup_interval *= 20;

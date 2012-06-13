@@ -4,6 +4,8 @@ check-plugin-updates: true
 no-creative: true
 multiworld: true
 lightweight-mode: false
+allow-unsafe-ench: false
+debug: false
 mysql:
   host: localhost:3306
   user: root

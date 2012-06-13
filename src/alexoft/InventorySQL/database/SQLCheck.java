@@ -1,5 +1,9 @@
 package alexoft.InventorySQL.database;
 
+import alexoft.InventorySQL.ActionStack;
+import alexoft.InventorySQL.Config;
+import alexoft.InventorySQL.Constants;
+import alexoft.InventorySQL.Main;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -9,21 +13,11 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
-
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import alexoft.InventorySQL.ActionStack;
-import alexoft.InventorySQL.Config;
-import alexoft.InventorySQL.Constants;
-import alexoft.InventorySQL.Main;
 
 public class SQLCheck implements Runnable {
 	private CoreSQLProcess parent;
@@ -150,7 +144,7 @@ public class SQLCheck implements Runnable {
 				int added = 0;
 				int removed = 0;
 				int pendings = 0;
-				String invData = "";
+				String invData;
 
 				String q = "SELECT * FROM `" + Config.dbTable
 						+ "` WHERE LOWER(`owner`) = LOWER('" + p.getName()
@@ -262,7 +256,7 @@ public class SQLCheck implements Runnable {
 
 					invData = CoreSQLProcess.buildInvString(p.getInventory());
 
-					if (remainsInv.size() != 0) {
+					if (!remainsInv.isEmpty()) {
 						Main.log(Level.WARNING, "\t Unable to add/remove "
 								+ remainsInv.size() + " item(s)");
 					}
@@ -422,7 +416,7 @@ public class SQLCheck implements Runnable {
 					String invData = CoreSQLProcess.buildInvString(c
 							.getInventory());
 
-					if (fullInv.size() != 0) {
+					if (!fullInv.isEmpty()) {
 						Main.log(Level.WARNING, "\t Unable to add/remove "
 								+ fullInv.size() + " item(s)");
 					}
