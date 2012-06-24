@@ -1,14 +1,21 @@
 package alexoft.InventorySQL;
 
+import alexoft.InventorySQL.auth.OfflineMode;
 import alexoft.InventorySQL.database.CoreSQLProcess;
 import alexoft.commons.UpdateChecker;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.logging.Level;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.authdb.AuthDB;
+import com.cypherx.xauth.xAuth;
 
 @SuppressWarnings("unused")
 public class Main extends JavaPlugin {
@@ -18,8 +25,11 @@ public class Main extends JavaPlugin {
 	public static int reload_count = -1; // Initialized to -1 for the first
 											// pseudo-reload
 
-	private InventorySQLPlayerListener playerListener;
+	private UpdateEventListener playerListener;
 	private InventorySQLCommandListener commandListener;
+	private OfflineMode offlineModeController;
+	
+	
 	private CoreSQLProcess coreSQLProcess;
 	public Boolean ready = true;
 
@@ -93,8 +103,9 @@ public class Main extends JavaPlugin {
 		}
 
 		this.coreSQLProcess = new CoreSQLProcess(this);
-		this.playerListener = new InventorySQLPlayerListener(this);
+		this.playerListener = new UpdateEventListener(this);
 		this.commandListener = new InventorySQLCommandListener(this);
+		this.offlineModeController = new OfflineMode(this.playerListener);
 
 		this.getCommand("invSQL").setExecutor(commandListener);
 		this.getCommand("ichk").setExecutor(commandListener);
@@ -168,6 +179,9 @@ public class Main extends JavaPlugin {
 
 	public CoreSQLProcess getCoreSQLProcess() {
 		return this.coreSQLProcess;
+	}
+	public OfflineMode getOfflineModeController() {
+		return this.offlineModeController;
 	}
 
 }

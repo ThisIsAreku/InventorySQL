@@ -60,6 +60,7 @@ public class SQLCheck implements Runnable {
 			} else {
 				Main.d("Running scheduled check");
 			}
+			Main.d("id: " + this.hashCode());
 
 			if (manualCheck && (runThis != null)) {
 				if (runThis.hasChestData() && Config.checkChest) {
@@ -134,6 +135,11 @@ public class SQLCheck implements Runnable {
 		if (conn == null)
 			return;
 		for (final Player p : i.getPlayers()) {
+			if (this.parent.plugin.getOfflineModeController().isUsingOfflineModePlugin() && !this.parent.plugin.getOfflineModeController().isPlayerLoggedIn(p.getName())) {
+				Main.d(this.hashCode()+" => checkPlayers:"+p.getName()+" !UNAUTHORIZED");
+				continue;
+			}
+			Main.d(this.hashCode()+" => checkPlayers:"+p.getName());
 			try {
 				if ((Config.noCreative)
 						&& (p.getGameMode() == GameMode.CREATIVE)) {

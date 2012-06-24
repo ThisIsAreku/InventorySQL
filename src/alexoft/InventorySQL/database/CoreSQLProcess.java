@@ -146,6 +146,17 @@ public class CoreSQLProcess implements Runnable {
 				}).get();
 	}
 
+	public Player getPlayer(final String p) throws InterruptedException,
+			ExecutionException {
+		return this.plugin.getServer().getScheduler()
+				.callSyncMethod(this.plugin, new Callable<Player>() {
+					@Override
+					public Player call() throws Exception {
+						return plugin.getServer().getPlayer(p);
+					}
+				}).get();
+	}
+
 	public JDCConnection getConnection() {
 		try {
 			return this.connectionManager.getConnection();
@@ -183,25 +194,25 @@ public class CoreSQLProcess implements Runnable {
 
 		for (String i : data.split(";")) {
 			m = pPendings.matcher(i);
-			Main.d("STR?'"+i+"'");
+			Main.d("STR?'" + i + "'");
 			if (m.matches()) {
 				ItemStack itmstck;
 				Integer id = Integer.decode(m.group(2));
 				Integer num = Integer.decode(m.group(6));
-				if(id == 373){
-					itmstck = new ItemStack(id,	num);
+				if (id == 373) {
+					itmstck = new ItemStack(id, num);
 					itmstck.setDurability(Short.decode(m.group(3)));
-					Main.d("POTION/"+m.group(3));
-				}else{
-					itmstck = new ItemStack(id,
-							num, (short) 0, Byte.parseByte(m.group(3)));
+					Main.d("POTION/" + m.group(3));
+				} else {
+					itmstck = new ItemStack(id, num, (short) 0,
+							Byte.parseByte(m.group(3)));
 				}
 				if (m.group(5) != null) {
 					for (String e : m.group(5).split(",")) {
 						String[] d = e.split("=");
 						Enchantment k = Enchantment.getById(Integer
 								.decode(d[0]));
-						Main.d("ENCH/"+k.getName()+"="+d[1]);
+						Main.d("ENCH/" + k.getName() + "=" + d[1]);
 						if (k != null) {
 							Integer l = Integer.decode(d[1]);
 							if (l > k.getMaxLevel())
@@ -252,9 +263,14 @@ public class CoreSQLProcess implements Runnable {
 			m = inventory.getItem(i);
 			if (m != null) {
 				b = m.getData();
-				l += "[" + i + "(" + m.getTypeId() + ":"
-						+ (m.getTypeId() == 373 ? (m.getDurability()) : (b != null ? b.getData() : "0")) + buildEnchString(m)
-						+ ")x" + m.getAmount() + "];";
+				l += "["
+						+ i
+						+ "("
+						+ m.getTypeId()
+						+ ":"
+						+ (m.getTypeId() == 373 ? (m.getDurability())
+								: (b != null ? b.getData() : "0"))
+						+ buildEnchString(m) + ")x" + m.getAmount() + "];";
 			}
 		}
 		if (l.length() > 1)

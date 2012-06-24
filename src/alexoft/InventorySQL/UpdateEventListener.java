@@ -1,12 +1,21 @@
 package alexoft.InventorySQL;
 
-import alexoft.InventorySQL.database.CoreSQLItem;
 import org.bukkit.entity.Player;
-import org.bukkit.event.*;
-import org.bukkit.event.player.*;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventException;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerBedLeaveEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.EventExecutor;
 
-public class InventorySQLPlayerListener implements Listener {
+import alexoft.InventorySQL.database.CoreSQLItem;
+
+public class UpdateEventListener implements Listener {
 	/*
 	 * private final Long EVENT_QUEUE = (long) (3 * 1000); private Map<Player,
 	 * Long> delayer = new HashMap<Player, Long>();
@@ -22,7 +31,7 @@ public class InventorySQLPlayerListener implements Listener {
 	 * delayer.put(p, System.currentTimeMillis()); } return false; }
 	 */
 
-	public InventorySQLPlayerListener(Main plugin) {
+	public UpdateEventListener(Main plugin) {
 		try {
 			this.plugin = plugin;
 			/*
@@ -42,7 +51,7 @@ public class InventorySQLPlayerListener implements Listener {
 			 * 
 			 * }, this.plugin, true); } else {
 			 */
-			if (Config.update_events.contains("join")){
+			if (Config.update_events.contains("join")) {
 				Main.d("Registering PlayerJoinEvent");
 				registerThis(PlayerJoinEvent.class, new EventExecutor() {
 					@Override
@@ -53,7 +62,7 @@ public class InventorySQLPlayerListener implements Listener {
 				});
 			}
 
-			if (Config.update_events.contains("quit")){
+			if (Config.update_events.contains("quit")) {
 				Main.d("Registering PlayerQuitEvent");
 				registerThis(PlayerQuitEvent.class, new EventExecutor() {
 					@Override
@@ -64,18 +73,19 @@ public class InventorySQLPlayerListener implements Listener {
 				});
 			}
 
-			if (Config.update_events.contains("changeworld")){
+			if (Config.update_events.contains("changeworld")) {
 				Main.d("Registering PlayerChangedWorldEvent");
-				registerThis(PlayerChangedWorldEvent.class, new EventExecutor() {
-					@Override
-					public void execute(Listener arg0, Event arg1)
-							throws EventException {
-						onPlayerChangedWorld((PlayerChangedWorldEvent) arg1);
-					}
-				});
+				registerThis(PlayerChangedWorldEvent.class,
+						new EventExecutor() {
+							@Override
+							public void execute(Listener arg0, Event arg1)
+									throws EventException {
+								onPlayerChangedWorld((PlayerChangedWorldEvent) arg1);
+							}
+						});
 			}
 
-			if (Config.update_events.contains("respawn")){
+			if (Config.update_events.contains("respawn")) {
 				Main.d("Registering PlayerRespawnEvent");
 				registerThis(PlayerRespawnEvent.class, new EventExecutor() {
 					@Override
@@ -86,7 +96,7 @@ public class InventorySQLPlayerListener implements Listener {
 				});
 			}
 
-			if (Config.update_events.contains("bedenter")){
+			if (Config.update_events.contains("bedenter")) {
 				Main.d("Registering PlayerBedEnterEvent");
 				registerThis(PlayerBedEnterEvent.class, new EventExecutor() {
 					@Override
@@ -97,7 +107,7 @@ public class InventorySQLPlayerListener implements Listener {
 				});
 			}
 
-			if (Config.update_events.contains("bedleave")){
+			if (Config.update_events.contains("bedleave")) {
 				Main.d("Registering PlayerBedLeaveEvent");
 				registerThis(PlayerBedLeaveEvent.class, new EventExecutor() {
 					@Override
@@ -167,41 +177,62 @@ public class InventorySQLPlayerListener implements Listener {
 	 * event.getPlayer() }, null); } }
 	 */
 
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerJoin(PlayerJoinEvent event) {
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getPlayer() }), true,
-				Config.afterLoginDelay);
+		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()) {
+			Main.d("Player " + event.getPlayer().getName() + " loggedin, but using Offline-Mode");
+			this.plugin.getOfflineModeController().watchPlayerLogin(
+					event.getPlayer().getName());
+		} else {
+			Main.d("onPlayerJoin("+event.toString()+")");
+			this.plugin.getCoreSQLProcess().runCheckThisTask(
+					new CoreSQLItem(new Player[] { event.getPlayer() }), true,
+					Config.afterLoginDelay);
+		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerQuit(PlayerQuitEvent event) {
+		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin() && !this.plugin.getOfflineModeController().isPlayerLoggedIn(event.getPlayer().getName())) {
+			return;
+		}
+		Main.d("onPlayerQuit("+event.toString()+")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), false, 0);
 	}
 
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin() && !this.plugin.getOfflineModeController().isPlayerLoggedIn(event.getPlayer().getName())) {
+			return;
+		}
+		Main.d("onPlayerChangedWorld("+event.toString()+")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), false, 0);
 	}
 
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
+		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin() && !this.plugin.getOfflineModeController().isPlayerLoggedIn(event.getPlayer().getName())) {
+			return;
+		}
+		Main.d("onPlayerRespawn("+event.toString()+")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
 	}
 
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerBedEnter(PlayerBedEnterEvent event) {
+		Main.d("onPlayerBedEnter("+event.toString()+")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
 	}
 
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerBedLeave(PlayerBedLeaveEvent event) {
+		Main.d("onPlayerBedLeave("+event.toString()+")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
+	}
+
+	public void onPlayerOfflineModeLogin(Player pl) {
+		Main.d("onPlayerOfflineModeLogin("+pl.toString()+")");
+		this.plugin.getCoreSQLProcess().runCheckThisTask(
+				new CoreSQLItem(new Player[] { pl }), true, 0);
 	}
 
 }
