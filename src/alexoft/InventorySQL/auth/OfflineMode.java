@@ -57,7 +57,8 @@ public class OfflineMode extends TimerTask {
 			this.t = new Timer();
 			this.t.schedule(this, 0, 2000);
 		} else {
-			this.t.cancel();
+			if (this.t != null)
+				this.t.cancel();
 		}
 	}
 
@@ -86,6 +87,8 @@ public class OfflineMode extends TimerTask {
 
 	@Override
 	public void run() {
+		if (watchedPlayers.isEmpty())
+			return;
 		List<String> toRemove = new ArrayList<String>();
 		Player pl = null;
 		synchronized (watchedPlayers) {
