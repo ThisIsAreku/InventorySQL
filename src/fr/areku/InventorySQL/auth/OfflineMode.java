@@ -1,4 +1,4 @@
-package alexoft.InventorySQL.auth;
+package fr.areku.InventorySQL.auth;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,17 +6,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import alexoft.InventorySQL.UpdateEventListener;
-import alexoft.InventorySQL.Main;
 
 import com.authdb.AuthDB;
 import com.cypherx.xauth.xAuth;
 import com.cypherx.xauth.xAuthPlayer;
+
+import fr.areku.InventorySQL.Main;
+import fr.areku.InventorySQL.UpdateEventListener;
 
 public class OfflineMode extends TimerTask {
 	private enum OfflineModePlugins {
@@ -73,20 +75,27 @@ public class OfflineMode extends TimerTask {
 	}
 
 	public boolean isPlayerLoggedIn(String player) {
-		switch (selectedAuthPlugin) {
-		case xAuth:
-			return (xAuthPlugin.getPlyrMngr().getPlayer(player).getStatus() == xAuthPlayer.Status.Authenticated);
+		try {
+			switch (selectedAuthPlugin) {
+			case xAuth:
+				return (xAuthPlugin.getPlayerManager().getPlayer(player).getStatus() == xAuthPlayer.Status.Authenticated);
 
-		case AuthDB:
-			return AuthDB.isAuthorized(Bukkit.getPlayerExact(player));
+			case AuthDB:
+				return AuthDB.isAuthorized(Bukkit.getPlayerExact(player));
 
-		default:
-			return false;
+			default:
+			}
+		} catch (Exception e) {
+			Main.log(Level.WARNING, "Cannot get player status with "
+					+ selectedAuthPlugin + ": ");
+			Main.log(Level.WARNING, e.getLocalizedMessage());
 		}
+		return false;
 	}
 
 	@Override
 	public void run() {
+		Main.d("OfflineMode: watching " + watchedPlayers.size() + " player(s)");
 		if (watchedPlayers.isEmpty())
 			return;
 		List<String> toRemove = new ArrayList<String>();
@@ -100,7 +109,7 @@ public class OfflineMode extends TimerTask {
 					if (isPlayerLoggedIn(p)) {
 						Main.d("Player " + p + " is now auth");
 						toRemove.add(p);
-						this.loginListener.onPlayerOfflineModeLogin(pl);
+						this.loginListener.doPlayerOfflineModeLogin(pl);
 					}
 				}
 				pl = null;

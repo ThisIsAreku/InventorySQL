@@ -1,4 +1,4 @@
-package alexoft.InventorySQL;
+package fr.areku.InventorySQL;
 
 public class EmptyException extends Exception {
 

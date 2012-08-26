@@ -1,4 +1,4 @@
-package alexoft.InventorySQL.database;
+package fr.areku.InventorySQL.database;
 
 import org.bukkit.block.Chest;
 import org.bukkit.command.CommandSender;

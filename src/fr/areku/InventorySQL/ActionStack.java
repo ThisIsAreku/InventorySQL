@@ -1,4 +1,4 @@
-package alexoft.InventorySQL;
+package fr.areku.InventorySQL;
 
 
 import org.bukkit.inventory.ItemStack;

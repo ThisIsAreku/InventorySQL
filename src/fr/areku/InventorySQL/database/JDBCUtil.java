@@ -1,4 +1,4 @@
-package alexoft.InventorySQL.database;
+package fr.areku.InventorySQL.database;
 
 /****************************************************************
  * Licensed to the Apache Software Foundation (ASF) under one   *
@@ -25,7 +25,8 @@ import java.sql.SQLException;
 import java.util.Locale;
 import java.util.logging.Level;
 
-import alexoft.InventorySQL.Main;
+import fr.areku.InventorySQL.Main;
+
 
 /**
  * <p>Helper class for managing common JDBC tasks.</p>

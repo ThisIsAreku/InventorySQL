@@ -1,8 +1,5 @@
-package alexoft.InventorySQL;
+package fr.areku.InventorySQL;
 
-import alexoft.InventorySQL.auth.OfflineMode;
-import alexoft.InventorySQL.database.CoreSQLProcess;
-import alexoft.commons.UpdateChecker;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
@@ -13,17 +10,18 @@ import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.mcstats.MetricsLite;
 
 import com.authdb.AuthDB;
 import com.cypherx.xauth.xAuth;
 
+import fr.areku.InventorySQL.auth.OfflineMode;
+import fr.areku.InventorySQL.database.CoreSQLProcess;
+import fr.areku.commons.UpdateChecker;
+
 @SuppressWarnings("unused")
 public class Main extends JavaPlugin {
 	public static Main instance;
-	public static final String TABLE_VERSION = "1.2";
-
-	public static int reload_count = -1; // Initialized to -1 for the first
-											// pseudo-reload
 
 	private UpdateEventListener playerListener;
 	private InventorySQLCommandListener commandListener;
@@ -82,6 +80,9 @@ public class Main extends JavaPlugin {
 	public void onDisable() {
 		// log("Disabling...");
 		this.getServer().getScheduler().cancelTasks(this);
+		try{
+		this.coreSQLProcess.connectionManager.close();
+		}catch(Exception e){}
 		// this.invokeCheck(false, null);
 
 		log("Disabled !");
@@ -116,22 +117,6 @@ public class Main extends JavaPlugin {
 
 		reload();
 
-		// debug code to pring pretty-formated ids
-		// used to update the webui
-		if (Config.debug) {
-			for (Material m : Material.values()) {
-				System.out.println("$items[" + m.getId() + "] = '"
-						+ m.toString() + "';");
-			}
-			System.out.println("//----------------");
-			for (Enchantment e : Enchantment.values()) {
-				System.out.println("$ench[" + e.getId()
-						+ "] = array('name' => '" + e.getName()
-						+ "', 'startlevel' => " + e.getStartLevel()
-						+ ", 'maxlevel' => " + e.getMaxLevel() + ");");
-			}
-		}
-
 	}
 
 	public void startMetrics() {
@@ -159,7 +144,6 @@ public class Main extends JavaPlugin {
 	}
 
 	public void reload() {
-		reload_count++;
 		try {
 			new Config(this);
 		} catch (Exception e) {

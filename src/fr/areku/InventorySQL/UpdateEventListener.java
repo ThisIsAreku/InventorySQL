@@ -1,4 +1,4 @@
-package alexoft.InventorySQL;
+package fr.areku.InventorySQL;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -13,7 +13,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.EventExecutor;
 
-import alexoft.InventorySQL.database.CoreSQLItem;
+import fr.areku.InventorySQL.database.CoreSQLItem;
 
 public class UpdateEventListener implements Listener {
 	/*
@@ -54,10 +54,9 @@ public class UpdateEventListener implements Listener {
 			if (Config.update_events.contains("join")) {
 				Main.d("Registering PlayerJoinEvent");
 				registerThis(PlayerJoinEvent.class, new EventExecutor() {
-					@Override
-					public void execute(Listener arg0, Event arg1)
+					public void execute(Listener listener, Event event)
 							throws EventException {
-						onPlayerJoin((PlayerJoinEvent) arg1);
+						doPlayerJoin((PlayerJoinEvent) event);						
 					}
 				});
 			}
@@ -65,10 +64,10 @@ public class UpdateEventListener implements Listener {
 			if (Config.update_events.contains("quit")) {
 				Main.d("Registering PlayerQuitEvent");
 				registerThis(PlayerQuitEvent.class, new EventExecutor() {
-					@Override
-					public void execute(Listener arg0, Event arg1)
+
+					public void execute(Listener listener, Event event)
 							throws EventException {
-						onPlayerQuit((PlayerQuitEvent) arg1);
+						doPlayerQuit((PlayerQuitEvent) event);
 					}
 				});
 			}
@@ -77,10 +76,9 @@ public class UpdateEventListener implements Listener {
 				Main.d("Registering PlayerChangedWorldEvent");
 				registerThis(PlayerChangedWorldEvent.class,
 						new EventExecutor() {
-							@Override
-							public void execute(Listener arg0, Event arg1)
-									throws EventException {
-								onPlayerChangedWorld((PlayerChangedWorldEvent) arg1);
+					public void execute(Listener listener, Event event)
+							throws EventException {
+						doPlayerChangedWorld((PlayerChangedWorldEvent) event);
 							}
 						});
 			}
@@ -88,10 +86,9 @@ public class UpdateEventListener implements Listener {
 			if (Config.update_events.contains("respawn")) {
 				Main.d("Registering PlayerRespawnEvent");
 				registerThis(PlayerRespawnEvent.class, new EventExecutor() {
-					@Override
-					public void execute(Listener arg0, Event arg1)
+					public void execute(Listener listener, Event event)
 							throws EventException {
-						onPlayerRespawn((PlayerRespawnEvent) arg1);
+						doPlayerRespawn((PlayerRespawnEvent) event);
 					}
 				});
 			}
@@ -99,10 +96,9 @@ public class UpdateEventListener implements Listener {
 			if (Config.update_events.contains("bedenter")) {
 				Main.d("Registering PlayerBedEnterEvent");
 				registerThis(PlayerBedEnterEvent.class, new EventExecutor() {
-					@Override
-					public void execute(Listener arg0, Event arg1)
+					public void execute(Listener listener, Event event)
 							throws EventException {
-						onPlayerBedEnter((PlayerBedEnterEvent) arg1);
+						doPlayerBedEnter((PlayerBedEnterEvent) event);
 					}
 				});
 			}
@@ -110,14 +106,18 @@ public class UpdateEventListener implements Listener {
 			if (Config.update_events.contains("bedleave")) {
 				Main.d("Registering PlayerBedLeaveEvent");
 				registerThis(PlayerBedLeaveEvent.class, new EventExecutor() {
-					@Override
-					public void execute(Listener arg0, Event arg1)
+					public void execute(Listener listener, Event event)
 							throws EventException {
-						onPlayerBedLeave((PlayerBedLeaveEvent) arg1);
+						doPlayerBedLeave((PlayerBedLeaveEvent) event);
 					}
 				});
 			}
 			// }
+
+			/*this.plugin
+					.getServer()
+					.getPluginManager().registerEvents(this, this.plugin);*/
+			
 		} catch (Exception e) {
 			Main.logException(e, "Listener init");
 		}
@@ -132,105 +132,67 @@ public class UpdateEventListener implements Listener {
 						this.plugin, true);
 	}
 
-	/*
-	 * @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-	 * public void onInventoryOpen(InventoryOpenEvent event) { if
-	 * (!Config.checkChest) return; Chest[] c = null; Block b =
-	 * event.getPlayer().getTargetBlock(null, 5); if (b.getType() ==
-	 * Material.CHEST) { c = new Chest[] { (Chest) b.getState() }; }
-	 * this.plugin.invokeCheck(new Player[] { (Player) event.getPlayer() }, c,
-	 * null); }
-	 * 
-	 * @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-	 * public void onInventoryClose(InventoryCloseEvent event) { if
-	 * (!Config.checkChest) return; Chest[] c = null; Block b =
-	 * event.getPlayer().getTargetBlock(null, 5); if (b.getType() ==
-	 * Material.CHEST) { c = new Chest[] { (Chest) b.getState() }; }
-	 * this.plugin.invokeCheck(new Player[] { (Player) event.getPlayer() }, c,
-	 * null); }
-	 * 
-	 * @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-	 * public void onPlayerDropItem(PlayerDropItemEvent event) { //
-	 * Main.log("onPlayerDropItem"); if (doDelay(event.getPlayer()))
-	 * this.plugin.invokeCheck(new Player[] { event.getPlayer() }, null); }
-	 * 
-	 * @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-	 * public void onPlayerPickupItem(PlayerPickupItemEvent event) { //
-	 * Main.log("onPlayerPickupItem"); if (doDelay(event.getPlayer()))
-	 * this.plugin.invokeCheck(new Player[] { event.getPlayer() }, null); }
-	 * 
-	 * @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-	 * public void onPlayerInteract(PlayerInteractEvent event) { if
-	 * ((event.getMaterial() == Material.CHEST) && (event.getAction() ==
-	 * Action.RIGHT_CLICK_BLOCK) &&
-	 * (event.getClickedBlock().getState().getType() == Material.CHEST) &&
-	 * Config.checkChest) { this.plugin.invokeCheck(new Chest[] { (Chest) event
-	 * .getClickedBlock().getState() }, null); } }
-	 * 
-	 * @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-	 * public void onBlockPlace(BlockPlaceEvent event) { if
-	 * ((event.getBlockPlaced().getType() == Material.CHEST) &&
-	 * Config.checkChest) { this.plugin.invokeCheck(new Player[] {
-	 * event.getPlayer() }, new Chest[] { (Chest)
-	 * event.getBlockPlaced().getState() }, null); } else { if
-	 * (doDelay(event.getPlayer())) this.plugin.invokeCheck(new Player[] {
-	 * event.getPlayer() }, null); } }
-	 */
-
-	public void onPlayerJoin(PlayerJoinEvent event) {
+	public void doPlayerJoin(PlayerJoinEvent event) {
 		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()) {
-			Main.d("Player " + event.getPlayer().getName() + " loggedin, but using Offline-Mode");
+			Main.d("Player " + event.getPlayer().getName()
+					+ " loggedin, but using Offline-Mode");
 			this.plugin.getOfflineModeController().watchPlayerLogin(
 					event.getPlayer().getName());
 		} else {
-			Main.d("onPlayerJoin("+event.toString()+")");
+			Main.d("onPlayerJoin(" + event.toString() + ")");
 			this.plugin.getCoreSQLProcess().runCheckThisTask(
 					new CoreSQLItem(new Player[] { event.getPlayer() }), true,
 					Config.afterLoginDelay);
 		}
 	}
 
-	public void onPlayerQuit(PlayerQuitEvent event) {
-		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin() && !this.plugin.getOfflineModeController().isPlayerLoggedIn(event.getPlayer().getName())) {
+	public void doPlayerQuit(PlayerQuitEvent event) {
+		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
+				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
+						event.getPlayer().getName())) {
 			return;
 		}
-		Main.d("onPlayerQuit("+event.toString()+")");
+		Main.d("onPlayerQuit(" + event.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), false, 0);
 	}
 
-	public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
-		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin() && !this.plugin.getOfflineModeController().isPlayerLoggedIn(event.getPlayer().getName())) {
+	public void doPlayerChangedWorld(PlayerChangedWorldEvent event) {
+		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
+				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
+						event.getPlayer().getName())) {
 			return;
 		}
-		Main.d("onPlayerChangedWorld("+event.toString()+")");
+		Main.d("onPlayerChangedWorld(" + event.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), false, 0);
 	}
 
-	public void onPlayerRespawn(PlayerRespawnEvent event) {
-		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin() && !this.plugin.getOfflineModeController().isPlayerLoggedIn(event.getPlayer().getName())) {
+	public void doPlayerRespawn(PlayerRespawnEvent event) {
+		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
+				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
+						event.getPlayer().getName())) {
 			return;
 		}
-		Main.d("onPlayerRespawn("+event.toString()+")");
+		Main.d("onPlayerRespawn(" + event.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
 	}
 
-	public void onPlayerBedEnter(PlayerBedEnterEvent event) {
-		Main.d("onPlayerBedEnter("+event.toString()+")");
+	public void doPlayerBedEnter(PlayerBedEnterEvent event) {
+		Main.d("onPlayerBedEnter(" + event.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
 	}
 
-	public void onPlayerBedLeave(PlayerBedLeaveEvent event) {
-		Main.d("onPlayerBedLeave("+event.toString()+")");
+	public void doPlayerBedLeave(PlayerBedLeaveEvent event) {
+		Main.d("onPlayerBedLeave(" + event.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
 	}
 
-	public void onPlayerOfflineModeLogin(Player pl) {
-		Main.d("onPlayerOfflineModeLogin("+pl.toString()+")");
+	public void doPlayerOfflineModeLogin(Player pl) {
+		Main.d("onPlayerOfflineModeLogin(" + pl.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { pl }), true, 0);
 	}

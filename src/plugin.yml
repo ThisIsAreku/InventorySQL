@@ -1,8 +1,8 @@
 name: InventorySQL
-main: alexoft.InventorySQL.Main
+main: fr.areku.InventorySQL.Main
 author: ThisIsAreku
-website: http://arekuserver.dyndns.org/
-version: 0.8.8
+website: http://areku.fr/
+version: 2.0
 description: Sync your inventory on MySQL
 commands:
     invSQL:

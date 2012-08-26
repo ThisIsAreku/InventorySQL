@@ -1,2 +1,2 @@
-update-yml-url: 'https://raw.github.com/ThisIsAreku/InventorySQL/master/src/plugin.yml'
+update-yml-url: 'https://raw.github.com/ThisIsAreku/InventorySQL/main/src/plugin.yml'
 message-update-url: 'http://dev.bukkit.org/server-mods/inventorysql/'
