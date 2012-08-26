@@ -22,6 +22,7 @@ public class SQLBackup implements Runnable {
 	private long ITERATION = 0;
 	private final long SEC_BETWEEN_CLEANUP = (Config.backup_cleanup_days * 86400) / 2;
 	private BackupAction manualAction = BackupAction.NONE;
+	@SuppressWarnings("unused")
 	private String player = "";
 	private CommandSender cs = null;
 

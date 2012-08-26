@@ -67,9 +67,10 @@ public class SQLCheck implements Runnable {
 			Main.d("id: " + this.hashCode());
 
 			if (manualCheck && (runThis != null)) {
-				/*if (runThis.hasChestData() && Config.checkChest) {
-					checkChests(runThis);
-				}*/
+				/*
+				 * if (runThis.hasChestData() && Config.checkChest) {
+				 * checkChests(runThis); }
+				 */
 				if (runThis.hasPlayersData()) {
 					checkPlayers(runThis);
 				}
@@ -186,121 +187,54 @@ public class SQLCheck implements Runnable {
 
 					String donePendings = "";
 
-					int latest_id = -1;
+					String latest_id = "";
 					int latest_count = 0;
 					ItemStack latest_stack = null;
-					int ench_id;
 					do {
-						if (latest_id != rs.getInt("p_id")) {
-							if (latest_id != -1) {
+						if (latest_id != rs.getString("p_id")) {
+							if (latest_id != "") {
 								pendings++;
-								Main.d("c:" + latest_count);
 								int left = 0;
 								if (latest_count > 0) {
 									left = giveItem(latest_stack, p);
 									if (left == 0) {
-										donePendings += latest_id + ",";
+										donePendings += "'"+latest_id + "',";
 										added++;
 									}
 								} else if (latest_count < 0) {
 									left = (-1) * removeItem(latest_stack, p);
 									if (left == 0) {
-										donePendings += latest_id + ",";
+										donePendings += "'"+latest_id + "',";
 										removed++;
 									}
 								}
 								if (left != 0)
 									executeItemsLeft(latest_id, left);
 							}
-							latest_id = rs.getInt("p_id");
+							latest_id = rs.getString("p_id");
 							latest_count = rs.getInt("count");
 							latest_stack = new ItemStack(rs.getInt("item"),
 									Math.abs(latest_count),
 									(short) rs.getInt("damage"),
 									rs.getByte("data"));
-							Main.d(this.hashCode()
-									+ " => checkPlayers:NewItemStack:"
-									+ latest_stack.toString());
-							ench_id = rs.getInt("ench");
-							if (!rs.wasNull()) {
-								Enchantment e = Enchantment.getById(ench_id);
-								int ench_level = rs.getInt(7);
-								if ((e != null) && !rs.wasNull()) {
-									Main.d(this.hashCode()
-											+ " => checkPlayers:" + latest_id
-											+ ":NewEnch:" + e.toString() + "/"
-											+ ench_level);
-									try {
-										if (Config.allow_unsafe_ench) {
-											latest_stack.addUnsafeEnchantment(
-													e, ench_level);
-										} else {
-											latest_stack.addEnchantment(e,
-													ench_level);
-										}
-									} catch (Exception ex) {
-										Main.log(
-												Level.WARNING,
-												"Error while adding "
-														+ e.getName()
-														+ "/"
-														+ ench_level
-														+ " to "
-														+ latest_stack
-																.toString());
-										Main.log(Level.WARNING,
-												ex.getLocalizedMessage());
-									}
-								}
-							}
+
+							latest_stack = readEnch(rs, latest_stack);
 						} else {
-							ench_id = rs.getInt(6);
-							if (!rs.wasNull()) {
-								Enchantment e = Enchantment.getById(ench_id);
-								int ench_level = rs.getInt(7);
-								if ((e != null) && !rs.wasNull()) {
-									Main.d(this.hashCode()
-											+ " => checkPlayers:" + latest_id
-											+ ":NewEnch:" + e.toString() + "/"
-											+ ench_level);
-									try {
-										if (Config.allow_unsafe_ench) {
-											latest_stack.addUnsafeEnchantment(
-													e, ench_level);
-										} else {
-											latest_stack.addEnchantment(e,
-													ench_level);
-										}
-									} catch (Exception ex) {
-										Main.log(
-												Level.WARNING,
-												"Error while adding "
-														+ e.getName()
-														+ "/"
-														+ ench_level
-														+ " to "
-														+ latest_stack
-																.toString());
-										Main.log(Level.WARNING,
-												ex.getLocalizedMessage());
-									}
-								}
-							}
+							latest_stack = readEnch(rs, latest_stack);
 						}
 					} while (rs.next());
 					pendings++;
-					Main.d("c:" + latest_count);
 					int left = 0;
 					if (latest_count > 0) {
 						left = giveItem(latest_stack, p);
 						if (left == 0) {
-							donePendings += latest_id + ",";
+							donePendings += "'"+latest_id + "',";
 							added++;
 						}
 					} else if (latest_count < 0) {
 						left = (-1) * removeItem(latest_stack, p);
 						if (left == 0) {
-							donePendings += latest_id + ",";
+							donePendings += "'"+latest_id + "',";
 							removed++;
 						}
 					}
@@ -319,7 +253,7 @@ public class SQLCheck implements Runnable {
 								+ donePendings);
 						conn.createStatement().executeUpdate(
 								"DELETE FROM `" + Config.dbTable_Enchantments
-										+ "` WHERE `owner` IN (" + donePendings
+										+ "` WHERE `id` IN (" + donePendings
 										+ ");");
 						conn.createStatement().executeUpdate(
 								"DELETE FROM `" + Config.dbTable_Pendings
@@ -382,10 +316,34 @@ public class SQLCheck implements Runnable {
 						conn);
 				updateSQL(p, userID, p.getInventory().getHelmet(), 103, conn);
 				// Main.d(this.hashCode() + " => checkPlayers:Inventory:" + q);
-			}else{
-				Main.d(this.hashCode() + " => checkPlayers:InventoryNotModified");
+			} else {
+				Main.d(this.hashCode()
+						+ " => checkPlayers:InventoryNotModified");
 			}
 		}
+	}
+
+	private ItemStack readEnch(ResultSet rs, ItemStack stack)
+			throws SQLException {
+		int ench_id = rs.getInt(6);
+		if (!rs.wasNull()) {
+			Enchantment e = Enchantment.getById(ench_id);
+			int ench_level = rs.getInt(7);
+			if ((e != null) && ench_level > 0) {
+				try {
+					if (Config.allow_unsafe_ench) {
+						stack.addUnsafeEnchantment(e, ench_level);
+					} else {
+						stack.addEnchantment(e, ench_level);
+					}
+				} catch (Exception ex) {
+					Main.log(Level.WARNING, "Error while adding " + e.getName()
+							+ "/" + ench_level + " to " + stack.toString());
+					Main.log(Level.WARNING, ex.getLocalizedMessage());
+				}
+			}
+		}
+		return stack;
 	}
 
 	private void updateSQL(Player p, int userID, ItemStack stack, int slotID,
@@ -442,11 +400,11 @@ public class SQLCheck implements Runnable {
 		}
 	}
 
-	private void executeItemsLeft(int item_id, int left) throws SQLException {
+	private void executeItemsLeft(String item_id, int left) throws SQLException {
 		PreparedStatement statement = conn.prepareStatement("UPDATE `"
 				+ Config.dbTable_Pendings + "` SET `count`=? WHERE `id`=?");
 		statement.setInt(1, left);
-		statement.setInt(2, item_id);
+		statement.setString(2, item_id);
 		statement.executeUpdate();
 	}
 
