@@ -9,7 +9,6 @@ import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public class Config {
-	public static final String TABLE_VERSION = "2.0";
 	
 	private static int reload_count = -1; // Initialized to -1 for the first
 											// pseudo-reload
