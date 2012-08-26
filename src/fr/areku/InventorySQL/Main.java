@@ -5,21 +5,12 @@ import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.mcstats.MetricsLite;
-
-import com.authdb.AuthDB;
-import com.cypherx.xauth.xAuth;
 
 import fr.areku.InventorySQL.auth.OfflineMode;
 import fr.areku.InventorySQL.database.CoreSQLProcess;
 import fr.areku.commons.UpdateChecker;
 
-@SuppressWarnings("unused")
 public class Main extends JavaPlugin {
 	public static Main instance;
 
@@ -87,7 +78,7 @@ public class Main extends JavaPlugin {
 
 		log("Disabled !");
 	}
-
+	
 	@Override
 	public void onEnable() {
 		instance = this;

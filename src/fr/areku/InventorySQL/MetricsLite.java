@@ -26,7 +26,7 @@
  * either expressed or implied, of anybody else.
  */
 
-package org.mcstats;
+package fr.areku.InventorySQL;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
