@@ -17,12 +17,12 @@ public class SQLUpdater {
 	private static final HashMap<String, String> tableFirstRow = new HashMap<String, String>();
 	static {
 		tableFirstRow.put("_inventories",
-				"varchar(36) NOT NULL, PRIMARY KEY (`id`))");
+				"varchar(36) NOT NULL, PRIMARY KEY (`id`)");
 		tableFirstRow.put("_pendings",
-				"varchar(36) NOT NULL, PRIMARY KEY (`id`))");
+				"varchar(36) NOT NULL, PRIMARY KEY (`id`)");
 		tableFirstRow.put("_enchantments", "varchar(36) NOT NULL");
 		tableFirstRow.put("_users",
-				"int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`))");
+				"int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)");
 	}
 
 	public SQLUpdater(Main plugin, ConnectionManager connectionManager) {
@@ -60,7 +60,7 @@ public class SQLUpdater {
 			String create = "CREATE TABLE IF NOT EXISTS `"
 					+ Config.dbTablePrefix + selector + "` (`id` "
 					+ tableFirstRow.get(selector)
-					+ " ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
+					+ ") ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
 			if (conn.createStatement().executeUpdate(create) != 0) {
 				Main.log(Level.SEVERE, "Cannot create table '"
 						+ Config.dbTablePrefix + selector
