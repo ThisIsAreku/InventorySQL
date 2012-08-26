@@ -1,9 +1,22 @@
 package fr.areku.InventorySQL.database;
 
-import java.sql.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.SQLClientInfoException;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Executor;
 
 public class JDCConnection implements Connection
 {
@@ -297,36 +310,6 @@ public class JDCConnection implements Connection
 		try {
 			conn.close();
 		} catch (final SQLException ex) {}
-	}
-
-	@Override
-	public void abort(Executor arg0) throws SQLException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public int getNetworkTimeout() throws SQLException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public String getSchema() throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setNetworkTimeout(Executor arg0, int arg1) throws SQLException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void setSchema(String arg0) throws SQLException {
-		// TODO Auto-generated method stub
-		
 	}
 
 }
