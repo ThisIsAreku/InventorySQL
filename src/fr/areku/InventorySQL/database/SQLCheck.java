@@ -5,10 +5,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -18,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 
 import fr.areku.InventorySQL.Config;
 import fr.areku.InventorySQL.Main;
+import fr.areku.InventorySQL.database.SQLItemStack.Action;
 
 public class SQLCheck implements Runnable {
 	private CoreSQLProcess parent;
@@ -185,65 +186,41 @@ public class SQLCheck implements Runnable {
 					Main.d(this.hashCode() + " => pendings items for "
 							+ p.getName());
 
-					String donePendings = "";
-
+					Map<String, SQLItemStack> stackList = new HashMap<String, SQLItemStack>();
 					String latest_id = "";
-					int latest_count = 0;
-					ItemStack latest_stack = null;
 					do {
-						if (latest_id != rs.getString("p_id")) {
-							if (latest_id != "") {
-								pendings++;
-								int left = 0;
-								if (latest_count > 0) {
-									left = giveItem(latest_stack, p);
-									if (left == 0) {
-										donePendings += "'"+latest_id + "',";
-										added++;
-									}
-								} else if (latest_count < 0) {
-									left = (-1) * removeItem(latest_stack, p);
-									if (left == 0) {
-										donePendings += "'"+latest_id + "',";
-										removed++;
-									}
-								}
-								if (left != 0)
-									executeItemsLeft(latest_id, left);
-							}
-							latest_id = rs.getString("p_id");
-							latest_count = rs.getInt("count");
-							latest_stack = new ItemStack(rs.getInt("item"),
-									Math.abs(latest_count),
-									(short) rs.getInt("damage"),
-									rs.getByte("data"));
-
-							latest_stack = readEnch(rs, latest_stack);
+						latest_id = rs.getString("p_id");
+						if (stackList.containsKey(latest_id)) {
+							stackList.get(latest_id).readEnch(rs);
 						} else {
-							latest_stack = readEnch(rs, latest_stack);
+							stackList.put(latest_id, new SQLItemStack(rs,
+									latest_id));
 						}
 					} while (rs.next());
-					pendings++;
-					int left = 0;
-					if (latest_count > 0) {
-						left = giveItem(latest_stack, p);
-						if (left == 0) {
-							donePendings += "'"+latest_id + "',";
-							added++;
-						}
-					} else if (latest_count < 0) {
-						left = (-1) * removeItem(latest_stack, p);
-						if (left == 0) {
-							donePendings += "'"+latest_id + "',";
-							removed++;
-						}
-					}
-					if (left != 0)
-						executeItemsLeft(latest_id, left);
 
-					if (donePendings.endsWith(","))
-						donePendings = donePendings.substring(0,
-								donePendings.length() - 1);
+					String donePendings = "";
+					for (SQLItemStack stack : stackList.values()) {
+						int left = 0;
+						if (stack.getAction() == Action.ADD) {
+							left = giveItem(stack.getItemStack(), p);
+							if (left == 0) {
+								donePendings += "'" + stack.getID() + "',";
+								added++;
+							}
+						} else if (stack.getAction() == Action.REMOVE) {
+							left = (-1) * removeItem(stack.getItemStack(), p);
+							if (left == 0) {
+								donePendings += "'" + stack.getID() + "',";
+								removed++;
+							}
+						}
+						if (left != 0)
+							executeItemsLeft(stack.getID(), left);
+
+						if (donePendings.endsWith(","))
+							donePendings = donePendings.substring(0,
+									donePendings.length() - 1);
+					}
 
 					Main.d(this.hashCode() + " => checkPlayers:PendingsDone:+"
 							+ added + "/-" + removed + " of " + pendings);
@@ -260,25 +237,16 @@ public class SQLCheck implements Runnable {
 										+ "` WHERE `id` IN (" + donePendings
 										+ ");");
 					}
-					if (i.getCommandSender() != null) {
-						i.getCommandSender().sendMessage(
-								"[InventorySQL] "
-										+ ChatColor.GREEN
-										+ "("
-										+ p.getName()
-										+ ") "
-										+ Main.getMessage("modif", added,
-												removed, pendings));
-					}
+					i.sendMessage("[InventorySQL] "
+							+ ChatColor.GREEN
+							+ "("
+							+ p.getName()
+							+ ") "
+							+ Main.getMessage("modif", added, removed, pendings));
 
 				} else {
-
-					if (i.getCommandSender() != null) {
-						i.getCommandSender().sendMessage(
-								"[InventorySQL] " + ChatColor.GREEN + "("
-										+ p.getName() + ") "
-										+ Main.getMessage("no-modif"));
-					}
+					i.sendMessage("[InventorySQL] " + ChatColor.GREEN + "("
+							+ p.getName() + ") " + Main.getMessage("no-modif"));
 
 				}
 				rs.close();
@@ -321,29 +289,6 @@ public class SQLCheck implements Runnable {
 						+ " => checkPlayers:InventoryNotModified");
 			}
 		}
-	}
-
-	private ItemStack readEnch(ResultSet rs, ItemStack stack)
-			throws SQLException {
-		int ench_id = rs.getInt(6);
-		if (!rs.wasNull()) {
-			Enchantment e = Enchantment.getById(ench_id);
-			int ench_level = rs.getInt(7);
-			if ((e != null) && ench_level > 0) {
-				try {
-					if (Config.allow_unsafe_ench) {
-						stack.addUnsafeEnchantment(e, ench_level);
-					} else {
-						stack.addEnchantment(e, ench_level);
-					}
-				} catch (Exception ex) {
-					Main.log(Level.WARNING, "Error while adding " + e.getName()
-							+ "/" + ench_level + " to " + stack.toString());
-					Main.log(Level.WARNING, ex.getLocalizedMessage());
-				}
-			}
-		}
-		return stack;
 	}
 
 	private void updateSQL(Player p, int userID, ItemStack stack, int slotID,

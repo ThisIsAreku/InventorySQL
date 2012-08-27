@@ -38,6 +38,12 @@ public class CoreSQLItem {
 	public CommandSender getCommandSender() {
 		return this.cs;
 	}
+	
+	public void sendMessage(String msg){
+		if (this.cs != null) {
+			this.cs.sendMessage(msg);
+		}
+	}
 
 	public boolean hasPlayersData() {
 		if (this.players != null) {
