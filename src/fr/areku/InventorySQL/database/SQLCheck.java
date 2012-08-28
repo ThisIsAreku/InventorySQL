@@ -16,6 +16,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import fr.areku.Authenticator.Authenticator;
 import fr.areku.InventorySQL.Config;
 import fr.areku.InventorySQL.Main;
 import fr.areku.InventorySQL.database.SQLItemStack.Action;
@@ -126,13 +127,12 @@ public class SQLCheck implements Runnable {
 		if (conn == null)
 			return;
 		for (Player p : i.getPlayers()) {
-			if (this.parent.plugin.getOfflineModeController()
-					.isUsingOfflineModePlugin()
-					&& !this.parent.plugin.getOfflineModeController()
-							.isPlayerLoggedIn(p)) {
-				Main.d(this.hashCode() + " => checkPlayers:" + p.getName()
-						+ " !UNAUTHORIZED");
-				continue;
+			if (this.parent.plugin.isOfflineModePlugin()) {
+				if (!Authenticator.isPlayerLoggedIn(p)) {
+					Main.d(this.hashCode() + " => checkPlayers:" + p.getName()
+							+ " !UNAUTHORIZED");
+					continue;
+				}
 			}
 			Main.d(this.hashCode() + " => checkPlayers:" + p.getName());
 			if ((Config.noCreative) && (p.getGameMode() == GameMode.CREATIVE)) {
@@ -222,7 +222,8 @@ public class SQLCheck implements Runnable {
 					}
 
 					Main.d(this.hashCode() + " => checkPlayers:PendingsDone:+"
-							+ added + "/-" + removed + " of " + stackList.size());
+							+ added + "/-" + removed + " of "
+							+ stackList.size());
 					if (donePendings != "") {
 						Main.d(this.hashCode()
 								+ " => checkPlayers:PendingsDone:RemovingEntries:"
@@ -241,7 +242,8 @@ public class SQLCheck implements Runnable {
 							+ "("
 							+ p.getName()
 							+ ") "
-							+ Main.getMessage("modif", added, removed, stackList.size()));
+							+ Main.getMessage("modif", added, removed,
+									stackList.size()));
 
 				} else {
 					i.sendMessage("[InventorySQL] " + ChatColor.GREEN + "("

@@ -13,9 +13,11 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.EventExecutor;
 
+import fr.areku.Authenticator.Authenticator;
+import fr.areku.Authenticator.OfflineModeListener;
 import fr.areku.InventorySQL.database.CoreSQLItem;
 
-public class UpdateEventListener implements Listener {
+public class UpdateEventListener implements Listener, OfflineModeListener {
 	/*
 	 * private final Long EVENT_QUEUE = (long) (3 * 1000); private Map<Player,
 	 * Long> delayer = new HashMap<Player, Long>();
@@ -56,7 +58,7 @@ public class UpdateEventListener implements Listener {
 				registerThis(PlayerJoinEvent.class, new EventExecutor() {
 					public void execute(Listener listener, Event event)
 							throws EventException {
-						doPlayerJoin((PlayerJoinEvent) event);						
+						doPlayerJoin((PlayerJoinEvent) event);
 					}
 				});
 			}
@@ -76,9 +78,9 @@ public class UpdateEventListener implements Listener {
 				Main.d("Registering PlayerChangedWorldEvent");
 				registerThis(PlayerChangedWorldEvent.class,
 						new EventExecutor() {
-					public void execute(Listener listener, Event event)
-							throws EventException {
-						doPlayerChangedWorld((PlayerChangedWorldEvent) event);
+							public void execute(Listener listener, Event event)
+									throws EventException {
+								doPlayerChangedWorld((PlayerChangedWorldEvent) event);
 							}
 						});
 			}
@@ -114,10 +116,11 @@ public class UpdateEventListener implements Listener {
 			}
 			// }
 
-			/*this.plugin
-					.getServer()
-					.getPluginManager().registerEvents(this, this.plugin);*/
-			
+			/*
+			 * this.plugin .getServer() .getPluginManager().registerEvents(this,
+			 * this.plugin);
+			 */
+
 		} catch (Exception e) {
 			Main.logException(e, "Listener init");
 		}
@@ -133,24 +136,18 @@ public class UpdateEventListener implements Listener {
 	}
 
 	public void doPlayerJoin(PlayerJoinEvent event) {
-		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()) {
-			Main.d("Player " + event.getPlayer().getName()
-					+ " loggedin, but using Offline-Mode");
-			this.plugin.getOfflineModeController().watchPlayerLogin(
-					event.getPlayer().getName());
-		} else {
-			Main.d("onPlayerJoin(" + event.toString() + ")");
-			this.plugin.getCoreSQLProcess().runCheckThisTask(
-					new CoreSQLItem(new Player[] { event.getPlayer() }), true,
-					Config.afterLoginDelay);
-		}
+		if (this.plugin.isOfflineModePlugin())
+			return;
+		Main.d("onPlayerJoin(" + event.toString() + ")");
+		this.plugin.getCoreSQLProcess().runCheckThisTask(
+				new CoreSQLItem(new Player[] { event.getPlayer() }), true,
+				Config.afterLoginDelay);
 	}
 
 	public void doPlayerQuit(PlayerQuitEvent event) {
-		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
-				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
-						event.getPlayer())) {
-			return;
+		if (this.plugin.isOfflineModePlugin()) {
+			if (!Authenticator.isPlayerLoggedIn(event.getPlayer()))
+				return;
 		}
 		Main.d("onPlayerQuit(" + event.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
@@ -158,10 +155,9 @@ public class UpdateEventListener implements Listener {
 	}
 
 	public void doPlayerChangedWorld(PlayerChangedWorldEvent event) {
-		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
-				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
-						event.getPlayer())) {
-			return;
+		if (this.plugin.isOfflineModePlugin()) {
+			if (!Authenticator.isPlayerLoggedIn(event.getPlayer()))
+				return;
 		}
 		Main.d("onPlayerChangedWorld(" + event.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
@@ -169,10 +165,9 @@ public class UpdateEventListener implements Listener {
 	}
 
 	public void doPlayerRespawn(PlayerRespawnEvent event) {
-		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
-				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
-						event.getPlayer())) {
-			return;
+		if (this.plugin.isOfflineModePlugin()) {
+			if (!Authenticator.isPlayerLoggedIn(event.getPlayer()))
+				return;
 		}
 		Main.d("onPlayerRespawn(" + event.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
@@ -191,10 +186,11 @@ public class UpdateEventListener implements Listener {
 				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
 	}
 
-	public void doPlayerOfflineModeLogin(Player pl) {
-		Main.d("onPlayerOfflineModeLogin(" + pl.toString() + ")");
+	@Override
+	public void onPlayerPluginLogin(Player player) {
+		Main.d("onPlayerOfflineModeLogin(" + player.toString() + ")");
 		this.plugin.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { pl }), true, 0);
+				new CoreSQLItem(new Player[] { player }), true, 0);
 	}
 
 }

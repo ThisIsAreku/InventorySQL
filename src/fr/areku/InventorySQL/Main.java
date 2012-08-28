@@ -5,9 +5,11 @@ import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import fr.areku.InventorySQL.auth.OfflineMode;
+import fr.areku.Authenticator.Authenticator;
 import fr.areku.InventorySQL.database.CoreSQLProcess;
 import fr.areku.commons.UpdateChecker;
 
@@ -16,9 +18,8 @@ public class Main extends JavaPlugin {
 
 	private UpdateEventListener playerListener;
 	private InventorySQLCommandListener commandListener;
-	private OfflineMode offlineModeController;
-	
-	
+	private boolean offlineModePlugin = false;
+
 	private CoreSQLProcess coreSQLProcess;
 	public Boolean ready = true;
 
@@ -71,14 +72,15 @@ public class Main extends JavaPlugin {
 	public void onDisable() {
 		// log("Disabling...");
 		this.getServer().getScheduler().cancelTasks(this);
-		try{
-		this.coreSQLProcess.connectionManager.close();
-		}catch(Exception e){}
+		try {
+			this.coreSQLProcess.connectionManager.close();
+		} catch (Exception e) {
+		}
 		// this.invokeCheck(false, null);
 
 		log("Disabled !");
 	}
-	
+
 	@Override
 	public void onEnable() {
 		instance = this;
@@ -97,17 +99,35 @@ public class Main extends JavaPlugin {
 		this.coreSQLProcess = new CoreSQLProcess(this);
 		this.playerListener = new UpdateEventListener(this);
 		this.commandListener = new InventorySQLCommandListener(this);
-		this.offlineModeController = new OfflineMode(this.playerListener);
 
 		this.getCommand("invSQL").setExecutor(commandListener);
 		this.getCommand("ichk").setExecutor(commandListener);
 
+		
 		startMetrics();
 		if (Config.check_plugin_updates)
 			startUpdate();
 
 		reload();
+		
+		linkOfflineMode();
+	}
 
+	public void linkOfflineMode() {
+		Plugin p = Bukkit.getServer().getPluginManager()
+				.getPlugin("Authenticator");
+		if (p != null) {
+			if (Authenticator.isUsingOfflineModePlugin()) {
+				offlineModePlugin = true;
+				Authenticator.registerOfflineModeListener(this.playerListener);
+				Authenticator.setDebug(Config.debug, this);
+				Main.log("Using Authenticator for offline-mode support");
+			}
+		}
+	}
+
+	public boolean isOfflineModePlugin() {
+		return offlineModePlugin;
 	}
 
 	public void startMetrics() {
@@ -154,9 +174,6 @@ public class Main extends JavaPlugin {
 
 	public CoreSQLProcess getCoreSQLProcess() {
 		return this.coreSQLProcess;
-	}
-	public OfflineMode getOfflineModeController() {
-		return this.offlineModeController;
 	}
 
 }

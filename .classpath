@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="/lib/1.3/AuthMe-2.6.7b5.jar"/>
 	<classpathentry kind="lib" path="/lib/1.3/CrazyLogin.jar"/>
 	<classpathentry kind="lib" path="/lib/1.3/CrazyCore.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Authenticator"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
