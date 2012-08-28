@@ -18,6 +18,8 @@ public class SQLUpdater {
 	static {
 		tableFirstRow.put("_inventories",
 				"varchar(36) NOT NULL, PRIMARY KEY (`id`)");
+		tableFirstRow.put("_backups",
+				"varchar(36) NOT NULL, PRIMARY KEY (`id`)");
 		tableFirstRow.put("_pendings",
 				"varchar(36) NOT NULL, PRIMARY KEY (`id`)");
 		tableFirstRow.put("_enchantments", "varchar(36) NOT NULL");
@@ -34,6 +36,7 @@ public class SQLUpdater {
 		try {
 			JDCConnection conn = this.connectionManager.getConnection();
 			check_table_version("_inventories", conn);
+			check_table_version("_backups", conn);
 			check_table_version("_pendings", conn);
 			check_table_version("_enchantments", conn);
 			check_table_version("_users", conn);

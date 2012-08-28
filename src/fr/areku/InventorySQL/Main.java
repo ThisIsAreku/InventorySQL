@@ -9,7 +9,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import fr.areku.Authenticator.Authenticator;
 import fr.areku.InventorySQL.database.CoreSQLProcess;
 import fr.areku.commons.UpdateChecker;
 
@@ -103,13 +102,12 @@ public class Main extends JavaPlugin {
 		this.getCommand("invSQL").setExecutor(commandListener);
 		this.getCommand("ichk").setExecutor(commandListener);
 
-		
 		startMetrics();
 		if (Config.check_plugin_updates)
 			startUpdate();
 
 		reload();
-		
+
 		linkOfflineMode();
 	}
 
@@ -117,10 +115,13 @@ public class Main extends JavaPlugin {
 		Plugin p = Bukkit.getServer().getPluginManager()
 				.getPlugin("Authenticator");
 		if (p != null) {
-			if (Authenticator.isUsingOfflineModePlugin()) {
+			if (fr.areku.Authenticator.Authenticator.isUsingOfflineModePlugin()) {
 				offlineModePlugin = true;
-				Authenticator.registerOfflineModeListener(this.playerListener);
-				Authenticator.setDebug(Config.debug, this);
+				fr.areku.Authenticator.Authenticator.setDebug(Config.debug,
+						this);
+
+				fr.areku.Authenticator.Authenticator
+						.registerOfflineModeListener(this.playerListener);
 				Main.log("Using Authenticator for offline-mode support");
 			}
 		}

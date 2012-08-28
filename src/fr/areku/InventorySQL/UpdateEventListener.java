@@ -13,46 +13,16 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.EventExecutor;
 
-import fr.areku.Authenticator.Authenticator;
-import fr.areku.Authenticator.OfflineModeListener;
+import fr.areku.Authenticator.api.IOfflineModeListener;
 import fr.areku.InventorySQL.database.CoreSQLItem;
 
-public class UpdateEventListener implements Listener, OfflineModeListener {
-	/*
-	 * private final Long EVENT_QUEUE = (long) (3 * 1000); private Map<Player,
-	 * Long> delayer = new HashMap<Player, Long>();
-	 */
+public class UpdateEventListener implements Listener, IOfflineModeListener {
 	private Main plugin;
 
-	/*
-	 * private boolean doDelay(Player p) { if (delayer.containsKey(p)) {
-	 * //Main.log((System.currentTimeMillis() - delayer.get(p)) + ">" +
-	 * EVENT_QUEUE); if ((System.currentTimeMillis() - delayer.get(p)) >
-	 * EVENT_QUEUE) { Main.d("EVENT_QUEUE reached for " + p.getName());
-	 * delayer.put(p, System.currentTimeMillis()); return true; } } else {
-	 * delayer.put(p, System.currentTimeMillis()); } return false; }
-	 */
-
-	public UpdateEventListener(Main plugin) {
+	public UpdateEventListener(Main pl) {
 		try {
-			this.plugin = plugin;
-			/*
-			 * if (Config.lightweight_mode) { this.plugin .getServer()
-			 * .getPluginManager() .registerEvent(PlayerJoinEvent.class, this,
-			 * EventPriority.NORMAL, new EventExecutor() {
-			 * 
-			 * @Override public void execute(Listener arg0, Event arg1) throws
-			 * EventException { onPlayerJoin((PlayerJoinEvent) arg1); }
-			 * 
-			 * }, this.plugin, true); this.plugin .getServer()
-			 * .getPluginManager() .registerEvent(PlayerQuitEvent.class, this,
-			 * EventPriority.NORMAL, new EventExecutor() {
-			 * 
-			 * @Override public void execute(Listener arg0, Event arg1) throws
-			 * EventException { onPlayerQuit((PlayerQuitEvent) arg1); }
-			 * 
-			 * }, this.plugin, true); } else {
-			 */
+			this.plugin = pl;
+
 			if (Config.update_events.contains("join")) {
 				Main.d("Registering PlayerJoinEvent");
 				registerThis(PlayerJoinEvent.class, new EventExecutor() {
@@ -114,12 +84,6 @@ public class UpdateEventListener implements Listener, OfflineModeListener {
 					}
 				});
 			}
-			// }
-
-			/*
-			 * this.plugin .getServer() .getPluginManager().registerEvents(this,
-			 * this.plugin);
-			 */
 
 		} catch (Exception e) {
 			Main.logException(e, "Listener init");
@@ -146,7 +110,8 @@ public class UpdateEventListener implements Listener, OfflineModeListener {
 
 	public void doPlayerQuit(PlayerQuitEvent event) {
 		if (this.plugin.isOfflineModePlugin()) {
-			if (!Authenticator.isPlayerLoggedIn(event.getPlayer()))
+			if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(event
+					.getPlayer()))
 				return;
 		}
 		Main.d("onPlayerQuit(" + event.toString() + ")");
@@ -156,7 +121,8 @@ public class UpdateEventListener implements Listener, OfflineModeListener {
 
 	public void doPlayerChangedWorld(PlayerChangedWorldEvent event) {
 		if (this.plugin.isOfflineModePlugin()) {
-			if (!Authenticator.isPlayerLoggedIn(event.getPlayer()))
+			if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(event
+					.getPlayer()))
 				return;
 		}
 		Main.d("onPlayerChangedWorld(" + event.toString() + ")");
@@ -166,7 +132,8 @@ public class UpdateEventListener implements Listener, OfflineModeListener {
 
 	public void doPlayerRespawn(PlayerRespawnEvent event) {
 		if (this.plugin.isOfflineModePlugin()) {
-			if (!Authenticator.isPlayerLoggedIn(event.getPlayer()))
+			if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(event
+					.getPlayer()))
 				return;
 		}
 		Main.d("onPlayerRespawn(" + event.toString() + ")");
@@ -189,7 +156,7 @@ public class UpdateEventListener implements Listener, OfflineModeListener {
 	@Override
 	public void onPlayerPluginLogin(Player player) {
 		Main.d("onPlayerOfflineModeLogin(" + player.toString() + ")");
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
+		plugin.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { player }), true, 0);
 	}
 

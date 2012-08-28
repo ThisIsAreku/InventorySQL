@@ -16,7 +16,6 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import fr.areku.Authenticator.Authenticator;
 import fr.areku.InventorySQL.Config;
 import fr.areku.InventorySQL.Main;
 import fr.areku.InventorySQL.database.SQLItemStack.Action;
@@ -128,7 +127,7 @@ public class SQLCheck implements Runnable {
 			return;
 		for (Player p : i.getPlayers()) {
 			if (this.parent.plugin.isOfflineModePlugin()) {
-				if (!Authenticator.isPlayerLoggedIn(p)) {
+				if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(p)) {
 					Main.d(this.hashCode() + " => checkPlayers:" + p.getName()
 							+ " !UNAUTHORIZED");
 					continue;
@@ -254,27 +253,26 @@ public class SQLCheck implements Runnable {
 				sth.close();
 			}
 			if (this.parent.isPlayerInventoryModified(p)) {
-				if (!Config.backup_enabled) {
-					/* Clear old inv */
+				String q = "DELETE `inventories`, `enchantments` FROM `"
+						+ Config.dbTable_Inventories
+						+ "` AS `inventories` LEFT JOIN `"
+						+ Config.dbTable_Enchantments
+						+ "` AS `enchantments` ON (`inventories`.`id` = `enchantments`.`id`";
 
-					String q = "DELETE `inventories`, `enchantments` FROM `"
-							+ Config.dbTable_Inventories
-							+ "` AS `inventories` LEFT JOIN `"
-							+ Config.dbTable_Enchantments
-							+ "` AS `enchantments` ON `inventories`.`id` = `enchantments`.`id`"
-							+ " WHERE (`inventories`.`owner` = ?";
-					if (Config.multiworld)
-						q += " AND `inventories`.`world` = ?";
+				if (Config.backup_enabled)
+					q += "AND `enchantments`.`is_backup` = 0";
 
-					q += ");";
-					sth = conn.prepareStatement(q);
-					sth.setInt(1, userID);
-					if (Config.multiworld)
-						sth.setString(2, p.getWorld().getName());
-					sth.executeUpdate();
-					sth.close();
+				q += ") WHERE (`inventories`.`owner` = ?";
+				if (Config.multiworld)
+					q += " AND `inventories`.`world` = ?";
 
-				}
+				q += ");";
+				sth = conn.prepareStatement(q);
+				sth.setInt(1, userID);
+				if (Config.multiworld)
+					sth.setString(2, p.getWorld().getName());
+				sth.executeUpdate();
+				sth.close();
 
 				for (Integer invSlotID = 0; invSlotID < 36; invSlotID++) {
 					updateSQL(p, userID, null, invSlotID, conn);
@@ -294,9 +292,7 @@ public class SQLCheck implements Runnable {
 
 	private void updateSQL(Player p, int userID, ItemStack stack, int slotID,
 			JDCConnection conn) throws SQLException {
-		String base_query = "INSERT INTO `"
-				+ Config.dbTable_Inventories
-				+ "`(`id`, `owner`, `world`, `item`, `data`,`damage`, `count`, `slot`) VALUES ";
+		String base_query = "INSERT INTO `%TABLE%`(`id`, `owner`, `world`, `item`, `data`,`damage`, `count`, `slot`) VALUES ";
 		ItemStack invSlotItem;
 		try {
 			invSlotItem = p.getInventory().getItem(slotID);
@@ -313,24 +309,38 @@ public class SQLCheck implements Runnable {
 					+ invSlotItem.getDurability() + ", "
 					+ invSlotItem.getAmount() + ", " + slotID + ")";
 
-			conn.prepareStatement(q_item).executeUpdate();
-
+			conn.prepareStatement(
+					q_item.replace("%TABLE%", Config.dbTable_Inventories))
+					.executeUpdate();
+			if (Config.backup_enabled) {
+				conn.prepareStatement(
+						q_item.replace("%TABLE%", Config.dbTable_Backups))
+						.executeUpdate();
+			}
 			Main.d(this.hashCode() + " => InsertItemFromInvCommand:" + q_item);
 			Main.d(this.hashCode() + " => InsertItemFromInv:" + invSlotID);
 
 			if (!invSlotItem.getEnchantments().isEmpty()) {
 
-				String q_ench = "INSERT INTO `" + Config.dbTable_Enchantments
-						+ "`(`id`, `ench_index`, `ench`, `level`) VALUES ";
+				String q_ench = "INSERT INTO `"
+						+ Config.dbTable_Enchantments
+						+ "`(`id`, `ench_index`, `ench`, `level`, `is_backup`) VALUES ";
 				int i = 0;
 				for (Entry<Enchantment, Integer> e : invSlotItem
 						.getEnchantments().entrySet()) {
 					q_ench += "('" + invSlotID + "', " + i + ", "
-							+ e.getKey().getId() + ", " + e.getValue() + "),";
+							+ e.getKey().getId() + ", " + e.getValue()
+							+ ", %ISBACKUP%),";
 					i++;
 				}
+
 				q_ench = q_ench.substring(0, q_ench.length() - 1);
-				conn.prepareStatement(q_ench).executeUpdate();
+				conn.prepareStatement(q_ench.replace("%ISBACKUP%", "0"))
+						.executeUpdate();
+				if (Config.backup_enabled) {
+					conn.prepareStatement(q_ench.replace("%ISBACKUP%", "1"))
+							.executeUpdate();
+				}
 			}
 		}
 	}

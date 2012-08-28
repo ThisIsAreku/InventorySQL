@@ -10,7 +10,7 @@ mysql:
   user: root
   pass: pass
   db: minecraft
-  table-prefix: InventorySQL
+  table-prefix: invsql
 backup:
   enabled: true
   cleanup-days: 5
