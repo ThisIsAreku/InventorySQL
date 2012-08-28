@@ -129,7 +129,7 @@ public class SQLCheck implements Runnable {
 			if (this.parent.plugin.getOfflineModeController()
 					.isUsingOfflineModePlugin()
 					&& !this.parent.plugin.getOfflineModeController()
-							.isPlayerLoggedIn(p.getName())) {
+							.isPlayerLoggedIn(p)) {
 				Main.d(this.hashCode() + " => checkPlayers:" + p.getName()
 						+ " !UNAUTHORIZED");
 				continue;
@@ -161,7 +161,6 @@ public class SQLCheck implements Runnable {
 
 			int added = 0;
 			int removed = 0;
-			int pendings = 0;
 
 			if (doGive) {
 				String q = "SELECT `pendings`.`id` AS `p_id`, `pendings`.`item` AS `item`, `pendings`.`data` AS `data`, `pendings`.`damage` AS `damage`, `pendings`.`count` AS `count`, `enchantments`.`ench` AS `ench`, `enchantments`.`level` AS `level`"
@@ -223,7 +222,7 @@ public class SQLCheck implements Runnable {
 					}
 
 					Main.d(this.hashCode() + " => checkPlayers:PendingsDone:+"
-							+ added + "/-" + removed + " of " + pendings);
+							+ added + "/-" + removed + " of " + stackList.size());
 					if (donePendings != "") {
 						Main.d(this.hashCode()
 								+ " => checkPlayers:PendingsDone:RemovingEntries:"
@@ -242,7 +241,7 @@ public class SQLCheck implements Runnable {
 							+ "("
 							+ p.getName()
 							+ ") "
-							+ Main.getMessage("modif", added, removed, pendings));
+							+ Main.getMessage("modif", added, removed, stackList.size()));
 
 				} else {
 					i.sendMessage("[InventorySQL] " + ChatColor.GREEN + "("

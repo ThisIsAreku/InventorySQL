@@ -149,7 +149,7 @@ public class UpdateEventListener implements Listener {
 	public void doPlayerQuit(PlayerQuitEvent event) {
 		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
 				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
-						event.getPlayer().getName())) {
+						event.getPlayer())) {
 			return;
 		}
 		Main.d("onPlayerQuit(" + event.toString() + ")");
@@ -160,7 +160,7 @@ public class UpdateEventListener implements Listener {
 	public void doPlayerChangedWorld(PlayerChangedWorldEvent event) {
 		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
 				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
-						event.getPlayer().getName())) {
+						event.getPlayer())) {
 			return;
 		}
 		Main.d("onPlayerChangedWorld(" + event.toString() + ")");
@@ -171,7 +171,7 @@ public class UpdateEventListener implements Listener {
 	public void doPlayerRespawn(PlayerRespawnEvent event) {
 		if (this.plugin.getOfflineModeController().isUsingOfflineModePlugin()
 				&& !this.plugin.getOfflineModeController().isPlayerLoggedIn(
-						event.getPlayer().getName())) {
+						event.getPlayer())) {
 			return;
 		}
 		Main.d("onPlayerRespawn(" + event.toString() + ")");

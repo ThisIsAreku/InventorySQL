@@ -6,28 +6,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-
-import com.authdb.AuthDB;
-import com.cypherx.xauth.xAuth;
-import com.cypherx.xauth.xAuthPlayer;
-
 import fr.areku.InventorySQL.Main;
 import fr.areku.InventorySQL.UpdateEventListener;
 
 public class OfflineMode extends TimerTask {
-	private enum OfflineModePlugins {
-		None, xAuth, AuthDB
-	}
 
 	// private AuthDB AuthDBPlugin;
-	private xAuth xAuthPlugin;
-	private OfflineModePlugins selectedAuthPlugin;
+	private OfflineModePluginAuthenticator selectedAuthPlugin;
 	private List<String> watchedPlayers;
 	private UpdateEventListener loginListener;
 
@@ -40,32 +33,57 @@ public class OfflineMode extends TimerTask {
 	}
 
 	public void hookAuthPlugins() {
-		selectedAuthPlugin = OfflineModePlugins.None;
+		try {
+			JarInputStream jarFile = new JarInputStream(this.getClass()
+					.getProtectionDomain().getCodeSource().getLocation()
+					.openStream());
+			JarEntry jarEntry = null;
+			OfflineModePluginAuthenticator authenticator = null;
+			while ((jarEntry = jarFile.getNextJarEntry()) != null) {
+				try {
+					if (jarEntry != null)
+						if (jarEntry.getName().startsWith(
+								"fr/areku/InventorySQL/auth/plugins/")
+								&& jarEntry.getName().trim() != "fr/areku/InventorySQL/auth/plugins/"
+								&& !jarEntry.isDirectory()) {
+							String classname = jarEntry.getName()
+									.replace('/', '.').trim();
+							classname = classname.substring(0,
+									classname.length() - 6);
+							authenticator = (OfflineModePluginAuthenticator) this
+									.getClass().getClassLoader()
+									.loadClass(classname).newInstance();
+							Main.d("Found new OfflineModePlugin:"
+									+ authenticator.getName());
+							Plugin p = Bukkit.getServer().getPluginManager()
+									.getPlugin(authenticator.getName());
+							if (p != null) {
+								selectedAuthPlugin = authenticator;
+								selectedAuthPlugin.initialize(p);
+								break;
+							}
+						}
+				} catch (Exception e) {Main.logException(e, "Error while initializing OfflineMode"); }
+			}
+			jarFile.close();
 
-		Plugin p = Bukkit.getServer().getPluginManager().getPlugin("xAuth");
-		if (p != null) {
-			xAuthPlugin = (xAuth) p;
-			selectedAuthPlugin = OfflineModePlugins.xAuth;
-		}
-		p = Bukkit.getServer().getPluginManager().getPlugin("AuthDB");
-		if (p != null) {
-			// AuthDBPlugin = (AuthDB) p;
-			selectedAuthPlugin = OfflineModePlugins.AuthDB;
-		}
-
-		if (selectedAuthPlugin != OfflineModePlugins.None) {
-			Main.log("Selected " + selectedAuthPlugin.toString()
-					+ " as offline mode plugin");
-			this.t = new Timer();
-			this.t.schedule(this, 0, 2000);
-		} else {
-			if (this.t != null)
-				this.t.cancel();
+			if (selectedAuthPlugin != null) {
+				Main.log("Selected " + selectedAuthPlugin.getName()
+						+ " as offline mode plugin");
+				this.t = new Timer();
+				this.t.schedule(this, 0, 2000);
+			} else {
+				Main.log("No compatible offline mode plugin found");
+				if (this.t != null)
+					this.t.cancel();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
 	public boolean isUsingOfflineModePlugin() {
-		return (selectedAuthPlugin != OfflineModePlugins.None);
+		return (selectedAuthPlugin != null);
 	}
 
 	public void watchPlayerLogin(String player) {
@@ -74,17 +92,9 @@ public class OfflineMode extends TimerTask {
 		}
 	}
 
-	public boolean isPlayerLoggedIn(String player) {
+	public boolean isPlayerLoggedIn(Player player) {
 		try {
-			switch (selectedAuthPlugin) {
-			case xAuth:
-				return (xAuthPlugin.getPlayerManager().getPlayer(player).getStatus() == xAuthPlayer.Status.Authenticated);
-
-			case AuthDB:
-				return AuthDB.isAuthorized(Bukkit.getPlayerExact(player));
-
-			default:
-			}
+			return selectedAuthPlugin.isPlayerLoggedIn(player);
 		} catch (Exception e) {
 			Main.log(Level.WARNING, "Cannot get player status with "
 					+ selectedAuthPlugin + ": ");
@@ -106,7 +116,7 @@ public class OfflineMode extends TimerTask {
 				String p = i.next();
 				pl = Bukkit.getPlayerExact(p);
 				if (pl != null) {
-					if (isPlayerLoggedIn(p)) {
+					if (isPlayerLoggedIn(pl)) {
 						Main.d("Player " + p + " is now auth");
 						toRemove.add(p);
 						this.loginListener.doPlayerOfflineModeLogin(pl);
