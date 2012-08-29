@@ -120,8 +120,7 @@ public class Main extends JavaPlugin {
 				fr.areku.Authenticator.Authenticator.setDebug(Config.debug,
 						this);
 
-				fr.areku.Authenticator.Authenticator
-						.registerOfflineModeListener(this.playerListener);
+				this.playerListener.registerOfflineModeSupport();
 				Main.log("Using Authenticator for offline-mode support");
 			}
 		}

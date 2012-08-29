@@ -13,10 +13,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.EventExecutor;
 
-import fr.areku.Authenticator.api.IOfflineModeListener;
+import fr.areku.Authenticator.events.PlayerOfflineModeLogin;
 import fr.areku.InventorySQL.database.CoreSQLItem;
 
-public class UpdateEventListener implements Listener, IOfflineModeListener {
+public class UpdateEventListener implements Listener {
 	private Main plugin;
 
 	public UpdateEventListener(Main pl) {
@@ -98,6 +98,17 @@ public class UpdateEventListener implements Listener, IOfflineModeListener {
 				.registerEvent(eventClass, this, EventPriority.NORMAL, exec,
 						this.plugin, true);
 	}
+	
+	public void registerOfflineModeSupport(){
+		if(!this.plugin.isOfflineModePlugin()) return;
+
+		registerThis(PlayerOfflineModeLogin.class, new EventExecutor() {
+			public void execute(Listener listener, Event event)
+					throws EventException {
+				doPlayerOfflineModeLogin((PlayerOfflineModeLogin) event);
+			}
+		});
+	}
 
 	public void doPlayerJoin(PlayerJoinEvent event) {
 		if (this.plugin.isOfflineModePlugin())
@@ -153,11 +164,10 @@ public class UpdateEventListener implements Listener, IOfflineModeListener {
 				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
 	}
 
-	@Override
-	public void onPlayerPluginLogin(Player player) {
-		Main.d("onPlayerOfflineModeLogin(" + player.toString() + ")");
+	public void doPlayerOfflineModeLogin(PlayerOfflineModeLogin event) {
+		Main.d("onPlayerOfflineModeLogin(" + event.getPlayer().toString() + ")");
 		plugin.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { player }), true, 0);
+				new CoreSQLItem(new Player[] { event.getPlayer() }), true, 0);
 	}
 
 }
