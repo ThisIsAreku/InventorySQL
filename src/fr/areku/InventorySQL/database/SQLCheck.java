@@ -139,6 +139,14 @@ public class SQLCheck implements Runnable {
 
 			int added = 0;
 			int removed = 0;
+			
+			if (Config.mirrorMode) {
+				if (doMirroring(userID, p)) {
+					p.sendMessage(ChatColor.RED + "[InventorySQL] " + Main.getMessage("mirror-latest"));
+				}else{
+					p.sendMessage(ChatColor.RED + "[InventorySQL] " + Main.getMessage("mirror-done"));
+				}
+			}
 
 			if (doGive) {
 				String q = "SELECT `pendings`.`id` AS `p_id`, `pendings`.`item` AS `item`, `pendings`.`data` AS `data`, `pendings`.`damage` AS `damage`, `pendings`.`count` AS `count`, `enchantments`.`ench` AS `ench`, `enchantments`.`level` AS `level`"
@@ -231,18 +239,9 @@ public class SQLCheck implements Runnable {
 				rs.close();
 				sth.close();
 			}
-			boolean m = this.parent.isPlayerInventoryModified(p);
-			boolean s = false;
-			if (Config.mirrorMode) {
-				if (doMirroring(userID, p, m)) {
-					s = m;
-				}
-			} else {
-				s = m;
-			}
 			parent.updatePlayerLastCheck(p, CURRENT_CHECK_EPOCH);
 
-			if (s) {
+			if (this.parent.isPlayerInventoryModified(p)) {
 				String q = "DELETE `inventories`, `enchantments` FROM `"
 						+ Config.dbTable_Inventories
 						+ "` AS `inventories` LEFT JOIN `"
@@ -277,18 +276,19 @@ public class SQLCheck implements Runnable {
 				Main.d(this.hashCode()
 						+ " => checkPlayers:InventoryNotModified");
 			}
+			p.saveData();
 		}
 	}
 
-	private boolean doMirroring(int userID, Player p, boolean invModified)
+	private boolean doMirroring(int userID, Player p)
 			throws SQLException {
 		Main.d(this.hashCode() + " => Mirroring:Start");
 		boolean r = false;
-		String q = "SELECT `inventories`.`id` AS `p_id`, `inventories`.`item` AS `item`, `inventories`.`data` AS `data`, `inventories`.`damage` AS `damage`, `inventories`.`count` AS `count`, `enchantments`.`ench` AS `ench`, `enchantments`.`level` AS `level` FROM `"
+		String q = "SELECT `inventories`.`id` AS `p_id`, `inventories`.`item` AS `item`, `inventories`.`data` AS `data`, `inventories`.`damage` AS `damage`, `inventories`.`count` AS `count`, `enchantments`.`ench` AS `ench`, `enchantments`.`level` AS `level`, `inventories`.`slot` AS `slot` FROM `"
 				+ Config.dbTable_Inventories
 				+ "` as `inventories` LEFT JOIN `"
 				+ Config.dbTable_Enchantments
-				+ "` AS `enchantments` ON `inventories`.`id` = `enchantments`.`id` WHERE UNIX_TIMESTAMP(`inventories`.`date`) > ? AND (`inventories`.`owner` = ?";
+				+ "` AS `enchantments` ON `inventories`.`id` = `enchantments`.`id` WHERE `inventories`.`date` > ? AND (`inventories`.`owner` = ?";
 		if (Config.multiworld)
 			q += " AND `inventories`.`world` = ?";
 		q += ");";
@@ -305,61 +305,70 @@ public class SQLCheck implements Runnable {
 		if (rs.first()) {
 			Main.d(this.hashCode() + " => Mirroring:SQLMoreRecent");
 			Main.d(this.hashCode() + " => Mirroring:TODO:Fetch inv from SQL");
-			Map<String, SQLItemStack> stackList = new HashMap<String, SQLItemStack>();
-			String latest_id = "";
-			do {
-				latest_id = rs.getString("p_id");
-				if (stackList.containsKey(latest_id)) {
-					stackList.get(latest_id).readEnch(rs);
-				} else {
-					stackList.put(latest_id, new SQLItemStack(rs, latest_id));
-				}
-			} while (rs.next());
-			p.getInventory().clear();
-			for (SQLItemStack stack : stackList.values()) {
-				switch (stack.getSlotID()) {
-				case 100:
-					p.getInventory().setBoots(stack.getItemStack());
-					break;
-				case 101:
-					p.getInventory().setLeggings(stack.getItemStack());
-					break;
-				case 102:
-					p.getInventory().setChestplate(stack.getItemStack());
-					break;
-				case 103:
-					p.getInventory().setHelmet(stack.getItemStack());
-					break;
-				default:
-					p.getInventory().setItem(stack.getSlotID(),
-							stack.getItemStack());
+			if (doGive) {
+				Map<String, SQLItemStack> stackList = new HashMap<String, SQLItemStack>();
+				String latest_id = "";
+				do {
+					latest_id = rs.getString("p_id");
+					if (stackList.containsKey(latest_id)) {
+						stackList.get(latest_id).readEnch(rs);
+					} else {
+						stackList.put(latest_id,
+								new SQLItemStack(rs, latest_id,  rs.getInt("slot")));
+					}
+				} while (rs.next());
+				System.out.println(stackList);
+				p.getInventory().clear();
+				for (SQLItemStack stack : stackList.values()) {
+					switch (stack.getSlotID()) {
+					case 100:
+						p.getInventory().setBoots(stack.getItemStack());
+						break;
+					case 101:
+						p.getInventory().setLeggings(stack.getItemStack());
+						break;
+					case 102:
+						p.getInventory().setChestplate(stack.getItemStack());
+						break;
+					case 103:
+						p.getInventory().setHelmet(stack.getItemStack());
+						break;
+					default:
+						p.getInventory().setItem(stack.getSlotID(),
+								stack.getItemStack());
+					}
 				}
 			}
+			updateSQLTime(userID, p);
 			r = false;
 		} else {
 			Main.d(this.hashCode() + " => Mirroring:LocalMoreRecentOrNoSQL");
-			if (!invModified) {
-				String up = "UPDATE `"
-						+ Config.dbTable_Inventories
-						+ "` AS `inventories` SET `date`=?,`event`=? WHERE (`inventories`.`owner` = ?";
-				if (Config.multiworld)
-					up += " AND `inventories`.`world` = ?";
-				up += ");";
-				PreparedStatement sth2 = conn.prepareStatement(up);
-				sth2.setLong(1, CURRENT_CHECK_EPOCH);
-				sth2.setString(2, this.initiator);
-				sth2.setInt(3, userID);
-				if (Config.multiworld)
-					sth.setString(4, p.getWorld().getName());
-				sth2.executeUpdate();
-				Main.d(this.hashCode() + " => Mirroring:SQLTimeUpdated");
-			}
+			/*if (!invModified) {
+				updateSQLTime(userID, p);
+			}*/
 			r = true;
 		}
 		rs.close();
 		sth.close();
 		Main.d(this.hashCode() + " => Mirroring:End");
 		return r;
+	}
+
+	private void updateSQLTime(int userID, Player p) throws SQLException {
+		String up = "UPDATE `"
+				+ Config.dbTable_Inventories
+				+ "` AS `inventories` SET `date`=?,`event`=? WHERE (`inventories`.`owner` = ?";
+		if (Config.multiworld)
+			up += " AND `inventories`.`world` = ?";
+		up += ");";
+		PreparedStatement sth2 = conn.prepareStatement(up);
+		sth2.setLong(1, CURRENT_CHECK_EPOCH);
+		sth2.setString(2, this.initiator);
+		sth2.setInt(3, userID);
+		if (Config.multiworld)
+			sth2.setString(4, p.getWorld().getName());
+		sth2.executeUpdate();
+		Main.d(this.hashCode() + " => Mirroring:SQLTimeUpdated");
 	}
 
 	private void updateSQL(Player p, int userID, ItemStack stack, int slotID,
@@ -380,7 +389,8 @@ public class SQLCheck implements Runnable {
 					+ invSlotItem.getData().getData() + ", "
 					+ invSlotItem.getDurability() + ", "
 					+ invSlotItem.getAmount() + ", " + slotID + ", '"
-					+ this.initiator + "', " + CURRENT_CHECK_EPOCH + ", '"+Config.serverUID+"')";
+					+ this.initiator + "', " + CURRENT_CHECK_EPOCH + ", '"
+					+ Config.serverUID + "')";
 
 			conn.prepareStatement(
 					q_item.replace("%TABLE%", Config.dbTable_Inventories))
@@ -438,7 +448,7 @@ public class SQLCheck implements Runnable {
 	}
 
 	private int giveItem(final ItemStack item, final Player p) {
-		Main.d(this.hashCode() + " => giveItem:"+item.toString());
+		Main.d(this.hashCode() + " => giveItem:" + item.toString());
 		try {
 			HashMap<Integer, ItemStack> m = this.parent.callSyncMethod(
 					new Callable<HashMap<Integer, ItemStack>>() {
@@ -455,7 +465,7 @@ public class SQLCheck implements Runnable {
 	}
 
 	private int removeItem(final ItemStack item, final Player p) {
-		Main.d(this.hashCode() + " => removeItem:"+item.toString());
+		Main.d(this.hashCode() + " => removeItem:" + item.toString());
 		try {
 			HashMap<Integer, ItemStack> m = this.parent.callSyncMethod(
 					new Callable<HashMap<Integer, ItemStack>>() {

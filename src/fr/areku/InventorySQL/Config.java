@@ -112,12 +112,12 @@ public class Config {
 			Main.log("-------------------------------");
 			Main.log("/!\\ Mirror Mode enabled ! /!\\");
 			Main.log("All servers that you set up on the same database will be synchronized");
-			if (!Config.debug) {
+			/*if (!Config.debug) {
 				Main.log("But.. Mirror mode is not ready yet, so it is disabled");
 				Config.mirrorMode = false;
 			} else {
 				Main.log("DEBUG FEATURE !");
-			}
+			}*/
 			Main.log("-------------------------------");
 		}
 

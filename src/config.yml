@@ -22,6 +22,9 @@ messages:
   check-n-players: 'Checking %s player(s)'
   check-all-players: 'Checking all players...'
   check-yourself: 'Checking yourself...'
+  mirror-wait: 'Hello %s ! Wait a little, your inventory is loading..'
+  mirror-latest: 'Your inventory is ready !'
+  mirror-done: 'Your inventory has been loaded !'
 update-events:
   join: true
   quit: true

@@ -1,5 +1,6 @@
 package fr.areku.InventorySQL;
 
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
@@ -124,7 +125,9 @@ public class UpdateEventListener implements Listener {
 	}
 
 	public void doPlayerJoin(PlayerJoinEvent event) {
-		this.plugin.getCoreSQLProcess().updatePlayerLastCheck(event.getPlayer(), 0);
+		if (Config.mirrorMode) {
+			event.getPlayer().sendMessage(ChatColor.RED + "[InventorySQL] " + Main.getMessage("mirror-wait", event.getPlayer().getDisplayName()));
+		}
 		if (this.plugin.isOfflineModePlugin())
 			return;
 		Main.d("onPlayerJoin(" + event.toString() + ")");
@@ -134,7 +137,6 @@ public class UpdateEventListener implements Listener {
 	}
 
 	public void doPlayerQuit(PlayerQuitEvent event) {
-		this.plugin.getCoreSQLProcess().updatePlayerLastCheck(event.getPlayer(), 0);
 		if (this.plugin.isOfflineModePlugin()) {
 			if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(event
 					.getPlayer()))
