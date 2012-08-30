@@ -1,0 +1,14 @@
+name: InventorySQL
+main: fr.areku.InventorySQL.Main
+author: ThisIsAreku
+website: http://areku.fr/
+version: 2.1.10
+description: Sync your inventory on MySQL
+softdepend: [Authenticator]
+commands:
+    invSQL:
+        description: InventorySQL - Main command
+        usage: /invSQL help
+    ichk:
+        description: InventorySQL - Check my inventory now !
+        usage: /ichk

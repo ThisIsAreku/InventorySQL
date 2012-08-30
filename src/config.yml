@@ -1,0 +1,33 @@
+# InventorySQL config - by ThisIsAreku - http://dev.bukkit.org/server-mods/inventorysql/
+check-interval: 600
+after-login-delay: 1
+check-plugin-updates: true
+no-creative: true
+multiworld: true
+allow-unsafe-ench: false
+mirror-mode: false
+mysql:
+  host: localhost:3306
+  user: root
+  pass: pass
+  db: minecraft
+  table-prefix: invsql
+backup:
+  enabled: true
+  cleanup-days: 5
+messages:
+  no-modif: 'No modifications'
+  modif: '%s items added, %s items removed of %s items'
+  no-online: 'None of these players were online..'
+  check-n-players: 'Checking %s player(s)'
+  check-all-players: 'Checking all players...'
+  check-yourself: 'Checking yourself...'
+update-events:
+  join: true
+  quit: true
+  changeworld: true
+  respawn: true
+  bedenter: true
+  bedleave: true
+  death: true
+debug: false
