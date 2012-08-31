@@ -311,9 +311,8 @@ public class SQLCheck implements Runnable {
 		if (Config.multiworld)
 			sth.setString(3, p.getWorld().getName());
 
-		System.out.println(sth);
 		ResultSet rs = sth.executeQuery();
-		System.out.println(rs);
+		
 		if (rs.first()) {
 			InventorySQL.d(this.hashCode() + " => Mirroring:SQLMoreRecent");
 			InventorySQL.d(this.hashCode()

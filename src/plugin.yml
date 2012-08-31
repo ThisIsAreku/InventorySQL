@@ -2,7 +2,7 @@ name: InventorySQL
 main: fr.areku.InventorySQL.InventorySQL
 author: ThisIsAreku
 website: http://areku.fr/
-version: 2.2.1
+version: 2.2.2
 description: Sync your inventory on MySQL
 softdepend: [Authenticator]
 commands:
