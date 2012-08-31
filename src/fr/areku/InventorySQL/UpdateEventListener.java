@@ -1,5 +1,6 @@
 package fr.areku.InventorySQL;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -19,14 +20,14 @@ import fr.areku.Authenticator.events.PlayerOfflineModeLogin;
 import fr.areku.InventorySQL.database.CoreSQLItem;
 
 public class UpdateEventListener implements Listener {
-	private Main plugin;
+	private InventorySQL plugin;
 
-	public UpdateEventListener(Main pl) {
+	public UpdateEventListener(InventorySQL pl) {
 		try {
 			this.plugin = pl;
 
 			if (Config.update_events.contains("join")) {
-				Main.d("Registering PlayerJoinEvent");
+				InventorySQL.d("Registering PlayerJoinEvent");
 				registerThis(PlayerJoinEvent.class, new EventExecutor() {
 					public void execute(Listener listener, Event event)
 							throws EventException {
@@ -36,7 +37,7 @@ public class UpdateEventListener implements Listener {
 			}
 
 			if (Config.update_events.contains("quit")) {
-				Main.d("Registering PlayerQuitEvent");
+				InventorySQL.d("Registering PlayerQuitEvent");
 				registerThis(PlayerQuitEvent.class, new EventExecutor() {
 
 					public void execute(Listener listener, Event event)
@@ -47,7 +48,7 @@ public class UpdateEventListener implements Listener {
 			}
 
 			if (Config.update_events.contains("changeworld")) {
-				Main.d("Registering PlayerChangedWorldEvent");
+				InventorySQL.d("Registering PlayerChangedWorldEvent");
 				registerThis(PlayerChangedWorldEvent.class,
 						new EventExecutor() {
 							public void execute(Listener listener, Event event)
@@ -58,7 +59,7 @@ public class UpdateEventListener implements Listener {
 			}
 
 			if (Config.update_events.contains("respawn")) {
-				Main.d("Registering PlayerRespawnEvent");
+				InventorySQL.d("Registering PlayerRespawnEvent");
 				registerThis(PlayerRespawnEvent.class, new EventExecutor() {
 					public void execute(Listener listener, Event event)
 							throws EventException {
@@ -68,7 +69,7 @@ public class UpdateEventListener implements Listener {
 			}
 
 			if (Config.update_events.contains("death")) {
-				Main.d("Registering PlayerDeathEvent");
+				InventorySQL.d("Registering PlayerDeathEvent");
 				registerThis(PlayerDeathEvent.class, new EventExecutor() {
 					public void execute(Listener listener, Event event)
 							throws EventException {
@@ -79,7 +80,7 @@ public class UpdateEventListener implements Listener {
 			}
 
 			if (Config.update_events.contains("bedenter")) {
-				Main.d("Registering PlayerBedEnterEvent");
+				InventorySQL.d("Registering PlayerBedEnterEvent");
 				registerThis(PlayerBedEnterEvent.class, new EventExecutor() {
 					public void execute(Listener listener, Event event)
 							throws EventException {
@@ -89,7 +90,7 @@ public class UpdateEventListener implements Listener {
 			}
 
 			if (Config.update_events.contains("bedleave")) {
-				Main.d("Registering PlayerBedLeaveEvent");
+				InventorySQL.d("Registering PlayerBedLeaveEvent");
 				registerThis(PlayerBedLeaveEvent.class, new EventExecutor() {
 					public void execute(Listener listener, Event event)
 							throws EventException {
@@ -99,21 +100,19 @@ public class UpdateEventListener implements Listener {
 			}
 
 		} catch (Exception e) {
-			Main.logException(e, "Listener init");
+			InventorySQL.logException(e, "Listener init");
 		}
 	}
 
 	private void registerThis(Class<? extends Event> eventClass,
 			EventExecutor exec) {
-		this.plugin
-				.getServer()
-				.getPluginManager()
+		Bukkit.getPluginManager()
 				.registerEvent(eventClass, this, EventPriority.NORMAL, exec,
 						this.plugin, true);
 	}
 
 	public void registerOfflineModeSupport() {
-		if (!this.plugin.isOfflineModePlugin())
+		if (!InventorySQL.isUsingAuthenticator())
 			return;
 
 		registerThis(PlayerOfflineModeLogin.class, new EventExecutor() {
@@ -126,81 +125,81 @@ public class UpdateEventListener implements Listener {
 
 	public void doPlayerJoin(PlayerJoinEvent event) {
 		if (Config.mirrorMode) {
-			event.getPlayer().sendMessage(ChatColor.RED + "[InventorySQL] " + Main.getMessage("mirror-wait", event.getPlayer().getDisplayName()));
+			event.getPlayer().sendMessage(ChatColor.RED + "[InventorySQL] " + InventorySQL.getMessage("mirror-wait", event.getPlayer().getDisplayName()));
 		}
-		if (this.plugin.isOfflineModePlugin())
+		if (InventorySQL.isUsingAuthenticator())
 			return;
-		Main.d("onPlayerJoin(" + event.toString() + ")");
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
+		InventorySQL.d("onPlayerJoin(" + event.toString() + ")");
+		InventorySQL.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }),
 				"PlayerJoin", true, Config.afterLoginDelay);
 	}
 
 	public void doPlayerQuit(PlayerQuitEvent event) {
-		if (this.plugin.isOfflineModePlugin()) {
+		if (InventorySQL.isUsingAuthenticator()) {
 			if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(event
 					.getPlayer()))
 				return;
 		}
-		Main.d("onPlayerQuit(" + event.toString() + ")");
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
+		InventorySQL.d("onPlayerQuit(" + event.toString() + ")");
+		InventorySQL.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }),
 				"PlayerQuit", false, 0);
 	}
 
 	public void doPlayerChangedWorld(PlayerChangedWorldEvent event) {
-		if (this.plugin.isOfflineModePlugin()) {
+		if (InventorySQL.isUsingAuthenticator()) {
 			if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(event
 					.getPlayer()))
 				return;
 		}
-		Main.d("onPlayerChangedWorld(" + event.toString() + ")");
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
+		InventorySQL.d("onPlayerChangedWorld(" + event.toString() + ")");
+		InventorySQL.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }),
 				"PlayerChangedWorld", false, 0);
 	}
 
 	public void doPlayerRespawn(PlayerRespawnEvent event) {
-		if (this.plugin.isOfflineModePlugin()) {
+		if (InventorySQL.isUsingAuthenticator()) {
 			if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(event
 					.getPlayer()))
 				return;
 		}
-		Main.d("onPlayerRespawn(" + event.toString() + ")");
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
+		InventorySQL.d("onPlayerRespawn(" + event.toString() + ")");
+		InventorySQL.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }),
 				"PlayerRespawn", true, 0);
 	}
 
 	public void doPlayerDeath(PlayerDeathEvent event) {
-		if (this.plugin.isOfflineModePlugin()) {
+		if (InventorySQL.isUsingAuthenticator()) {
 			if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(event
 					.getEntity()))
 				return;
 		}
-		Main.d("onPlayerDeath(" + event.toString() + ")");
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
+		InventorySQL.d("onPlayerDeath(" + event.toString() + ")");
+		InventorySQL.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getEntity() }),
 				"PlayerDeath", false, 0);
 	}
 
 	public void doPlayerBedEnter(PlayerBedEnterEvent event) {
-		Main.d("onPlayerBedEnter(" + event.toString() + ")");
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
+		InventorySQL.d("onPlayerBedEnter(" + event.toString() + ")");
+		InventorySQL.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }),
 				"PlayerBedEnter", true, 0);
 	}
 
 	public void doPlayerBedLeave(PlayerBedLeaveEvent event) {
-		Main.d("onPlayerBedLeave(" + event.toString() + ")");
-		this.plugin.getCoreSQLProcess().runCheckThisTask(
+		InventorySQL.d("onPlayerBedLeave(" + event.toString() + ")");
+		InventorySQL.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }),
 				"PlayerBedLeave", true, 0);
 	}
 
 	public void doPlayerOfflineModeLogin(PlayerOfflineModeLogin event) {
-		Main.d("onPlayerOfflineModeLogin(" + event.getPlayer().toString() + ")");
-		plugin.getCoreSQLProcess().runCheckThisTask(
+		InventorySQL.d("onPlayerOfflineModeLogin(" + event.getPlayer().toString() + ")");
+		InventorySQL.getCoreSQLProcess().runCheckThisTask(
 				new CoreSQLItem(new Player[] { event.getPlayer() }),
 				"PlayerOfflineModeLogin", true, 0);
 	}

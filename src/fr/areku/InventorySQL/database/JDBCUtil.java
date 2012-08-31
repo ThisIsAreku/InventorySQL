@@ -25,7 +25,7 @@ import java.sql.SQLException;
 import java.util.Locale;
 import java.util.logging.Level;
 
-import fr.areku.InventorySQL.Main;
+import fr.areku.InventorySQL.InventorySQL;
 
 
 /**
@@ -140,7 +140,7 @@ abstract public class JDBCUtil
                 aResultSet.close();
             }
         } catch (SQLException ex) {
-            Main.log(Level.SEVERE, "Unable to close JDBCResulset: " + ex);
+            InventorySQL.log(Level.SEVERE, "Unable to close JDBCResulset: " + ex);
         }
     }
 

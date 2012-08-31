@@ -8,7 +8,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 
 import fr.areku.InventorySQL.Config;
-import fr.areku.InventorySQL.Main;
+import fr.areku.InventorySQL.InventorySQL;
 
 public class SQLItemStack{
 	public enum Action{ADD, REMOVE};
@@ -79,9 +79,9 @@ public class SQLItemStack{
 						theItemStack.addEnchantment(e, ench_level);
 					}
 				} catch (Exception ex) {
-					Main.log(Level.WARNING, "Error while adding " + e.getName()
+					InventorySQL.log(Level.WARNING, "Error while adding " + e.getName()
 							+ "/" + ench_level + " to " + this.toString());
-					Main.log(Level.WARNING, ex.getLocalizedMessage());
+					InventorySQL.log(Level.WARNING, ex.getLocalizedMessage());
 				}
 			}
 		}

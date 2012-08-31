@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import fr.areku.InventorySQL.Main;
+import fr.areku.InventorySQL.InventorySQL;
 
 public class ConnectionManager implements Closeable{
 	private static ConnectionManager instance;
@@ -24,7 +24,7 @@ public class ConnectionManager implements Closeable{
 	public ConnectionManager(String url, String user, String password)
 			throws ClassNotFoundException {
 		Class.forName("com.mysql.jdbc.Driver");
-		Main.d("Attempting to connecting to database at: " + url);
+		InventorySQL.d("Attempting to connecting to database at: " + url);
 		this.url = url;
 		this.user = user;
 		this.password = password;
@@ -57,12 +57,12 @@ public class ConnectionManager implements Closeable{
 			if (conn.lease()) {
 				if (conn.isValid())
 					return conn;
-				Main.d("Removing dead MySQL connection");
+				InventorySQL.d("Removing dead MySQL connection");
 				connections.remove(conn);
 				conn.terminate();
 			}
 		}
-		Main.d("No available MySQL connections, attempting to create new one");
+		InventorySQL.d("No available MySQL connections, attempting to create new one");
 		conn = new JDCConnection(DriverManager.getConnection(url, user,
 				password));
 		conn.lease();
@@ -89,7 +89,7 @@ public class ConnectionManager implements Closeable{
 	private synchronized void reapConnections() {
 		if(!ready) return;
 		
-		Main.d("Attempting to reap dead connections");
+		InventorySQL.d("Attempting to reap dead connections");
 		final long stale = System.currentTimeMillis() - timeToLive;
 		int count = 0;
 		int i = 1;
@@ -106,7 +106,7 @@ public class ConnectionManager implements Closeable{
 			}
 			i++;
 		}
-		Main.d(count + " connections reaped");
+		InventorySQL.d(count + " connections reaped");
 	}
 
 	/**
@@ -129,7 +129,7 @@ public class ConnectionManager implements Closeable{
 
 	public void close() {
 			ready = false;
-			Main.d("Closing all MySQL connections");
+			InventorySQL.d("Closing all MySQL connections");
 			for (JDCConnection conn : connections) {
 				conn.terminate();
 			}

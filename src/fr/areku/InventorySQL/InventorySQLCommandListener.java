@@ -3,6 +3,7 @@ package fr.areku.InventorySQL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -13,11 +14,10 @@ import org.bukkit.entity.Player;
 
 import fr.areku.InventorySQL.database.CoreSQLItem;
 
-
 public class InventorySQLCommandListener implements CommandExecutor {
-	public Main plugin;
+	public InventorySQL plugin;
 
-	public InventorySQLCommandListener(Main plugin) {
+	public InventorySQLCommandListener(InventorySQL plugin) {
 		this.plugin = plugin;
 	}
 
@@ -57,14 +57,16 @@ public class InventorySQLCommandListener implements CommandExecutor {
 				sendMessage(cs, ChatColor.RED
 						+ "You cannot check yourself as a Console !");
 			} else {
-				sendMessage(cs,
-						ChatColor.GREEN + Main.getMessage("check-yourself"));
-				this.plugin
+				sendMessage(
+						cs,
+						ChatColor.GREEN
+								+ InventorySQL.getMessage("check-yourself"));
+				InventorySQL
 						.getCoreSQLProcess()
 						.runCheckThisTask(
 								new CoreSQLItem(new Player[] { (Player) cs })
-										.setCommandSender(cs), "Command",
-								true, 0);
+										.setCommandSender(cs),
+								"Command", true, 0);
 			}
 			return true;
 		}
@@ -82,7 +84,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 							+ " * /invSQL pw <password> : change your password");
 					return true;
 				}
-				if (this.plugin.getCoreSQLProcess().updatePlayerPassword(
+				if (InventorySQL.getCoreSQLProcess().updatePlayerPassword(
 						cs.getName(), combine(args, " "))) {
 					sendMessage(cs, ChatColor.BLUE + "Password changed");
 				} else {
@@ -100,15 +102,16 @@ public class InventorySQLCommandListener implements CommandExecutor {
 						sendMessage(
 								cs,
 								ChatColor.GREEN
-										+ Main.getMessage("check-all-players"));
-						this.plugin.getCoreSQLProcess().runCheckAllTask(0);
+										+ InventorySQL
+												.getMessage("check-all-players"));
+						InventorySQL.getCoreSQLProcess().runCheckAllTask(0);
 						return true;
 					}
 					Player pT;
 					List<Player> p = new ArrayList<Player>();
 
 					for (int i = 1; i < args.length; i++) {
-						pT = this.plugin.getServer().getPlayer(args[i]);
+						pT = Bukkit.getPlayerExact(args[i]);
 						if (pT != null) {
 							if (!p.contains(pT))
 								p.add(pT);
@@ -118,18 +121,20 @@ public class InventorySQLCommandListener implements CommandExecutor {
 						sendMessage(
 								cs,
 								ChatColor.GREEN
-										+ Main.getMessage("check-n-players",
-												p.size()));
-						this.plugin
+										+ InventorySQL.getMessage(
+												"check-n-players", p.size()));
+						InventorySQL
 								.getCoreSQLProcess()
 								.runCheckThisTask(
 										new CoreSQLItem(p
 												.toArray(new Player[] {}))
-												.setCommandSender(cs), "Command",
-										true, 0);
+												.setCommandSender(cs),
+										"Command", true, 0);
 					} else {
-						sendMessage(cs,
-								ChatColor.GREEN + Main.getMessage("no-online"));
+						sendMessage(
+								cs,
+								ChatColor.GREEN
+										+ InventorySQL.getMessage("no-online"));
 					}
 				} else {
 					if (isNotPlayer) {
@@ -139,14 +144,15 @@ public class InventorySQLCommandListener implements CommandExecutor {
 						sendMessage(
 								cs,
 								ChatColor.GREEN
-										+ Main.getMessage("check-yourself"));
-						this.plugin
+										+ InventorySQL
+												.getMessage("check-yourself"));
+						InventorySQL
 								.getCoreSQLProcess()
 								.runCheckThisTask(
 										new CoreSQLItem(
 												new Player[] { (Player) cs })
-												.setCommandSender(cs), "Command",
-										true, 0);
+												.setCommandSender(cs),
+										"Command", true, 0);
 					}
 				}
 			}
@@ -159,7 +165,7 @@ public class InventorySQLCommandListener implements CommandExecutor {
 				}
 				if ("clean".equals(args[1])) {
 					sendMessage(cs, ChatColor.GREEN + "Cleaning backup..");
-					this.plugin.getCoreSQLProcess().runBackupClean();
+					InventorySQL.getCoreSQLProcess().runBackupClean();
 				}
 
 			}

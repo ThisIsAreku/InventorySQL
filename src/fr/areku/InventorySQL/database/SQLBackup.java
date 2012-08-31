@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import com.mysql.jdbc.Statement;
 
 import fr.areku.InventorySQL.Config;
-import fr.areku.InventorySQL.Main;
+import fr.areku.InventorySQL.InventorySQL;
 
 
 public class SQLBackup implements Runnable {
@@ -27,26 +27,26 @@ public class SQLBackup implements Runnable {
 	private CommandSender cs = null;
 
 	public SQLBackup(CoreSQLProcess parent) {
-		Main.d("New SQLBackup !");
+		InventorySQL.d("New SQLBackup !");
 		this.parent = parent;
 	}
 
 	public SQLBackup restore(String player, int id) {
-		Main.d("SQLBackup->restore");
+		InventorySQL.d("SQLBackup->restore");
 		this.player = player;
 		manualAction = BackupAction.RESTORE;
 		return this;
 	}
 
 	public SQLBackup showBackups(String player) {
-		Main.d("SQLBackup->showBackups");
+		InventorySQL.d("SQLBackup->showBackups");
 		this.player = player;
 		manualAction = BackupAction.SHOW_BACKUP;
 		return this;
 	}
 
 	public SQLBackup clean() {
-		Main.d("SQLBackup->clean");
+		InventorySQL.d("SQLBackup->clean");
 		manualAction = BackupAction.CLEAN;
 		return this;
 	}
@@ -62,7 +62,7 @@ public class SQLBackup implements Runnable {
 
 	@Override
 	public void run() {
-		Main.d("Running Scheduled backup, action: "+manualAction);
+		InventorySQL.d("Running Scheduled backup, action: "+manualAction);
 		try {
 			updateConn();
 			if (manualAction == BackupAction.RESTORE) {
@@ -75,7 +75,7 @@ public class SQLBackup implements Runnable {
 
 			}
 			if ((manualAction == BackupAction.CLEAN)||(ITERATION * Config.check_interval) >= (SEC_BETWEEN_CLEANUP)) {
-				Main.d("CLEANING BACKUP");
+				InventorySQL.d("CLEANING BACKUP");
 				if (conn == null)
 					conn = this.parent.getConnection();
 				if (conn != null) {
@@ -97,14 +97,14 @@ public class SQLBackup implements Runnable {
 						rows =  -1;
 					}
 					sth.close();
-					Main.d(rows + " rows deleted (inv+ench)");
+					InventorySQL.d(rows + " rows deleted (inv+ench)");
 				}
 				ITERATION = -1;
 			}
 			if (conn != null)
 				conn.close();
 		} catch (Exception e) {
-			Main.logException(e, "Cannot do backup");
+			InventorySQL.logException(e, "Cannot do backup");
 		}
 		ITERATION++;
 	}

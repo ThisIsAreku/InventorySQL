@@ -1,5 +1,6 @@
 package fr.areku.InventorySQL;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
@@ -12,14 +13,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 import fr.areku.InventorySQL.database.CoreSQLProcess;
 import fr.areku.commons.UpdateChecker;
 
-public class Main extends JavaPlugin {
-	public static Main instance;
+public class InventorySQL extends JavaPlugin {
+	private static InventorySQL instance;
+
+	private CoreSQLProcess coreSQLProcess;
+	private PlayerManager playerManager;
 
 	private UpdateEventListener playerListener;
 	private InventorySQLCommandListener commandListener;
 	private boolean offlineModePlugin = false;
 
-	private CoreSQLProcess coreSQLProcess;
 	public Boolean ready = true;
 
 	public static void log(Level level, String m) {
@@ -48,7 +51,10 @@ public class Main extends JavaPlugin {
 		log(Level.SEVERE, "-- please send line below to the dev --");
 		log(Level.SEVERE, "InventorySQL version "
 				+ instance.getDescription().getVersion());
-		log(Level.SEVERE, "Bukkit version " + instance.getServer().getVersion());
+		log(Level.SEVERE, "Bukkit version " + Bukkit.getVersion());
+		if(InventorySQL.isUsingAuthenticator()){
+			log(Level.SEVERE, "Authenticator version " + Bukkit.getPluginManager().getPlugin("Authenticator").getDescription().getVersion());
+		}
 		log(Level.SEVERE, "Message: " + m);
 		if (e instanceof SQLException) {
 			log(Level.SEVERE, "SQLState: " + ((SQLException) e).getSQLState());
@@ -69,15 +75,12 @@ public class Main extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
-		// log("Disabling...");
-		this.getServer().getScheduler().cancelTasks(this);
 		try {
-			this.coreSQLProcess.connectionManager.close();
+			getCoreSQLProcess().onDisable();
+			getPlayerManager().saveDatas();
 		} catch (Exception e) {
+			logException(e, "Error while disabling..");
 		}
-		// this.invokeCheck(false, null);
-
-		log("Disabled !");
 	}
 
 	@Override
@@ -93,8 +96,11 @@ public class Main extends JavaPlugin {
 			new Config(this);
 		} catch (Exception e) {
 			logException(e, "Unable to load config");
+			this.Disable();
+			return;
 		}
-
+		this.playerManager = new PlayerManager(new File(getDataFolder(),
+				"players.txt"));
 		this.coreSQLProcess = new CoreSQLProcess(this);
 		this.playerListener = new UpdateEventListener(this);
 		this.commandListener = new InventorySQLCommandListener(this);
@@ -121,13 +127,10 @@ public class Main extends JavaPlugin {
 						this);
 
 				this.playerListener.registerOfflineModeSupport();
-				Main.log("Using Authenticator for offline-mode support");
+				InventorySQL
+						.log("Using Authenticator for offline-mode support");
 			}
 		}
-	}
-
-	public boolean isOfflineModePlugin() {
-		return offlineModePlugin;
 	}
 
 	public void startMetrics() {
@@ -151,7 +154,7 @@ public class Main extends JavaPlugin {
 	}
 
 	public void Disable() {
-		this.getPluginLoader().disablePlugin(this);
+		Bukkit.getPluginManager().disablePlugin(this);
 	}
 
 	public void reload() {
@@ -164,7 +167,7 @@ public class Main extends JavaPlugin {
 		}
 
 		try {
-			this.coreSQLProcess.reload();
+			getCoreSQLProcess().reload();
 		} catch (ClassNotFoundException e) {
 			log(Level.SEVERE, "Cannot found MySQL Class !");
 			this.Disable();
@@ -172,8 +175,16 @@ public class Main extends JavaPlugin {
 		}
 	}
 
-	public CoreSQLProcess getCoreSQLProcess() {
-		return this.coreSQLProcess;
+	public static PlayerManager getPlayerManager() {
+		return instance.playerManager;
+	}
+
+	public static CoreSQLProcess getCoreSQLProcess() {
+		return instance.coreSQLProcess;
+	}
+
+	public static boolean isUsingAuthenticator() {
+		return instance.offlineModePlugin;
 	}
 
 }

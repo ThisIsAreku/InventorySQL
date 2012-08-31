@@ -9,11 +9,11 @@ import java.util.logging.Level;
 
 import fr.areku.InventorySQL.Config;
 import fr.areku.InventorySQL.EmptyException;
-import fr.areku.InventorySQL.Main;
+import fr.areku.InventorySQL.InventorySQL;
 
 public class SQLUpdater {
 	private ConnectionManager connectionManager = null;
-	private Main plugin = null;
+	private InventorySQL plugin = null;
 	private static final HashMap<String, String> tableFirstRow = new HashMap<String, String>();
 	static {
 		tableFirstRow.put("_inventories",
@@ -27,7 +27,7 @@ public class SQLUpdater {
 				"int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)");
 	}
 
-	public SQLUpdater(Main plugin, ConnectionManager connectionManager) {
+	public SQLUpdater(InventorySQL plugin, ConnectionManager connectionManager) {
 		this.plugin = plugin;
 		this.connectionManager = connectionManager;
 	}
@@ -46,10 +46,10 @@ public class SQLUpdater {
 			conn.close();
 			return true;
 		} catch (SQLException ex) {
-			Main.log(Level.SEVERE, "Cannot connect to mySQL database !");
-			Main.log(Level.SEVERE, "Message: " + ex.getLocalizedMessage());
+			InventorySQL.log(Level.SEVERE, "Cannot connect to mySQL database !");
+			InventorySQL.log(Level.SEVERE, "Message: " + ex.getLocalizedMessage());
 		} catch (Exception ex) {
-			Main.logException(ex, "table need update?");
+			InventorySQL.logException(ex, "table need update?");
 		}
 		return false;
 	}
@@ -58,14 +58,14 @@ public class SQLUpdater {
 			throws SQLException, EmptyException {
 		if (!JDBCUtil.tableExistsCaseSensitive(conn.getMetaData(),
 				Config.dbTablePrefix + selector)) {
-			Main.log("Creating '" + Config.dbTablePrefix + selector
+			InventorySQL.log("Creating '" + Config.dbTablePrefix + selector
 					+ "' table...");
 			String create = "CREATE TABLE IF NOT EXISTS `"
 					+ Config.dbTablePrefix + selector + "` (`id` "
 					+ tableFirstRow.get(selector)
 					+ ") ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
 			if (conn.createStatement().executeUpdate(create) != 0) {
-				Main.log(Level.SEVERE, "Cannot create table '"
+				InventorySQL.log(Level.SEVERE, "Cannot create table '"
 						+ Config.dbTablePrefix + selector
 						+ "', check your config !");
 			} else {
@@ -95,7 +95,7 @@ public class SQLUpdater {
 
 	private void update_table_fields(String selector, JDCConnection conn)
 			throws SQLException {
-		Main.log("Table '" + Config.dbTablePrefix + selector + "' need update");
+		InventorySQL.log("Table '" + Config.dbTablePrefix + selector + "' need update");
 		String query = read(plugin
 				.getResource("fr/areku/InventorySQL/schemas/schema" + selector
 						+ ".sql"));
@@ -114,7 +114,7 @@ public class SQLUpdater {
 			conn.createStatement().executeUpdate(query);
 		} catch (SQLException e) {
 		}
-		Main.log("'" + Config.dbTablePrefix + selector + "' table: update done");
+		InventorySQL.log("'" + Config.dbTablePrefix + selector + "' table: update done");
 	}
 
 	private String read(InputStream src) {

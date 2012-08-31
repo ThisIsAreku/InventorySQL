@@ -47,7 +47,7 @@ public class Config {
 
 	public static boolean debug = false;
 
-	public Config(Main plugin) throws IOException,
+	public Config(InventorySQL plugin) throws IOException,
 			InvalidConfigurationException {
 		reload_count++;
 		File file = new File(plugin.getDataFolder(), "config.yml");
@@ -95,7 +95,7 @@ public class Config {
 		}
 		if (Config.update_events.isEmpty() && (reload_count > 0)) {
 			if (reload_count > 0)
-				Main.log(Level.WARNING,
+				InventorySQL.log(Level.WARNING,
 						"No update event ! Data will only be updated when using the command");
 		}
 
@@ -109,16 +109,16 @@ public class Config {
 		Config.afterLoginDelay *= 20;
 
 		if (Config.mirrorMode && (reload_count > 0)) {
-			Main.log("-------------------------------");
-			Main.log("/!\\ Mirror Mode enabled ! /!\\");
-			Main.log("All servers that you set up on the same database will be synchronized");
+			InventorySQL.log("-------------------------------");
+			InventorySQL.log("/!\\ Mirror Mode enabled ! /!\\");
+			InventorySQL.log("All servers that you set up on the same database will be synchronized");
 			/*if (!Config.debug) {
 				Main.log("But.. Mirror mode is not ready yet, so it is disabled");
 				Config.mirrorMode = false;
 			} else {
 				Main.log("DEBUG FEATURE !");
 			}*/
-			Main.log("-------------------------------");
+			InventorySQL.log("-------------------------------");
 		}
 
 		plugin.getConfig().save(file);
@@ -135,7 +135,7 @@ public class Config {
 			Config.serverUID = scan.next().trim();
 		}
 		if (reload_count > 0) {
-			Main.log("Server UID is : " + Config.serverUID);
+			InventorySQL.log("Server UID is : " + Config.serverUID);
 		}
 	}
 
