@@ -6,6 +6,7 @@ no-creative: true
 multiworld: true
 allow-unsafe-ench: false
 mirror-mode: false
+use-permissions: false
 mysql:
   host: localhost:3306
   user: root

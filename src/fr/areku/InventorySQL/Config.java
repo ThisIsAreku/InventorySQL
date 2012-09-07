@@ -35,6 +35,8 @@ public class Config {
 	public static boolean multiworld = true;
 	public static boolean mirrorMode = false;
 	public static int afterLoginDelay = 20;
+	public static boolean usePermissions = false;
+	
 
 	public static boolean backup_enabled = true;
 	public static int backup_cleanup_days = 0;
@@ -76,6 +78,7 @@ public class Config {
 		Config.afterLoginDelay = plugin.getConfig().getInt("after-login-delay");
 		Config.multiworld = plugin.getConfig().getBoolean("multiworld");
 		Config.mirrorMode = plugin.getConfig().getBoolean("mirror-mode");
+		Config.usePermissions = plugin.getConfig().getBoolean("use-permissions");
 
 		Config.backup_enabled = plugin.getConfig().getBoolean("backup.enabled");
 		Config.backup_cleanup_days = plugin.getConfig().getInt(

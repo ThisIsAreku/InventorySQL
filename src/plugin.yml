@@ -2,7 +2,7 @@ name: InventorySQL
 main: fr.areku.InventorySQL.InventorySQL
 author: ThisIsAreku
 website: http://areku.fr/
-version: 2.2.2
+version: 2.3
 description: Sync your inventory on MySQL
 softdepend: [Authenticator]
 commands:
@@ -12,3 +12,31 @@ commands:
     ichk:
         description: InventorySQL - Check my inventory now !
         usage: /ichk
+permissions:
+  invsql.*:
+    description: 'Give access to all commands'
+    children:
+      invsql.check.me: true
+      invsql.check.others: true
+      invsql.check: true
+      invsql.pw: true
+      invsql.reload: true
+  invsql.pw:
+    description: 'Let you change you password'
+    default: true
+  invsql.reload:
+    description: 'Let you reload the plugin'
+    default: op
+  invsql.check:
+    description: 'Give access to all check related commands'
+    children:
+      invsql.check.me: true
+      invsql.check.others: true
+  invsql.check.me:
+    description: 'Let you check yourself'
+    default: true
+  invsql.check.others:
+    description: 'Let you check other players'
+    default: op
+    children:
+      invsql.check.me: true

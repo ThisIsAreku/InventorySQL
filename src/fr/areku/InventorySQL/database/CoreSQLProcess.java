@@ -122,7 +122,7 @@ public class CoreSQLProcess implements Runnable {
 		}
 	}
 
-	public boolean isDatabaseReady() {
+	public synchronized boolean isDatabaseReady() {
 		return this.databaseReady;
 	}
 
@@ -150,7 +150,7 @@ public class CoreSQLProcess implements Runnable {
 		return Bukkit.getScheduler().callSyncMethod(plugin, methode);
 	}
 
-	public JDCConnection getConnection() {
+	public synchronized JDCConnection getConnection() {
 		try {
 			return this.connectionManager.getConnection();
 		} catch (SQLException e) {

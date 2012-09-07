@@ -86,8 +86,10 @@ public class SQLCheck implements Runnable {
 				}
 			}
 		} catch (Exception ex) {
-			InventorySQL.logException(ex,
-					"exception in playerlogic - check all");
+			if (parent.isDatabaseReady()){
+				InventorySQL.logException(ex,
+						"exception in playerlogic - check all");
+			}
 		}
 
 		if (manualCheck) {
@@ -312,7 +314,7 @@ public class SQLCheck implements Runnable {
 			sth.setString(3, p.getWorld().getName());
 
 		ResultSet rs = sth.executeQuery();
-		
+
 		if (rs.first()) {
 			InventorySQL.d(this.hashCode() + " => Mirroring:SQLMoreRecent");
 			InventorySQL.d(this.hashCode()
