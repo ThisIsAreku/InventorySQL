@@ -86,7 +86,7 @@ public class SQLCheck implements Runnable {
 				}
 			}
 		} catch (Exception ex) {
-			if (parent.isDatabaseReady()){
+			if (parent.isDatabaseReady()) {
 				InventorySQL.logException(ex,
 						"exception in playerlogic - check all");
 			}
@@ -108,6 +108,9 @@ public class SQLCheck implements Runnable {
 		updateConn();
 		if (conn == null)
 			return;
+
+		StringBuilder players_to_remove_sb = new StringBuilder();
+
 		for (Player p : i.getPlayers()) {
 			if (InventorySQL.isUsingAuthenticator()) {
 				if (!fr.areku.Authenticator.Authenticator.isPlayerLoggedIn(p)) {
@@ -257,26 +260,24 @@ public class SQLCheck implements Runnable {
 			String theInvHash = PlayerManager.computePlayerInventoryHash(p);
 			if (InventorySQL.getPlayerManager().get(pName)
 					.updateHash(theInvHash)) {
-				String q = "DELETE `inventories`, `enchantments` FROM `"
-						+ Config.dbTable_Inventories
-						+ "` AS `inventories` LEFT JOIN `"
-						+ Config.dbTable_Enchantments
-						+ "` AS `enchantments` ON (`inventories`.`id` = `enchantments`.`id`";
-
-				if (Config.backup_enabled)
-					q += "AND `enchantments`.`is_backup` = 0";
-
-				q += ") WHERE (`inventories`.`owner` = ?";
-				if (Config.multiworld)
-					q += " AND `inventories`.`world` = ?";
-
-				q += ");";
-				sth = conn.prepareStatement(q);
-				sth.setInt(1, userID);
-				if (Config.multiworld)
-					sth.setString(2, p.getWorld().getName());
-				sth.executeUpdate();
-				sth.close();
+				/*
+				 * String q = "DELETE `inventories`, `enchantments` FROM `" +
+				 * Config.dbTable_Inventories + "` AS `inventories` LEFT JOIN `"
+				 * + Config.dbTable_Enchantments +
+				 * "` AS `enchantments` ON (`inventories`.`id` = `enchantments`.`id`"
+				 * ;
+				 * 
+				 * if (Config.backup_enabled) q +=
+				 * "AND `enchantments`.`is_backup` = 0";
+				 * 
+				 * q += ") WHERE (`inventories`.`owner` = ?"; if
+				 * (Config.multiworld) q += " AND `inventories`.`world` = ?";
+				 * 
+				 * q += ");"; sth = conn.prepareStatement(q); sth.setInt(1,
+				 * userID); if (Config.multiworld) sth.setString(2,
+				 * p.getWorld().getName()); sth.executeUpdate(); sth.close();
+				 */
+				players_to_remove_sb.append(userID.toString() + ",").toString();
 
 				for (Integer invSlotID = 0; invSlotID < 36; invSlotID++) {
 					updateSQL(p, userID, null, invSlotID, conn);
@@ -292,6 +293,38 @@ public class SQLCheck implements Runnable {
 						+ " => checkPlayers:InventoryNotModified");
 			}
 			p.saveData();
+		}
+		
+		String final_players_id = players_to_remove_sb.toString();
+		if (final_players_id.length() > 0) {
+			String q = "DELETE `inventories`, `enchantments` FROM `"
+					+ Config.dbTable_Inventories
+					+ "` AS `inventories` LEFT JOIN `"
+					+ Config.dbTable_Enchantments
+					+ "` AS `enchantments` ON (`inventories`.`id` = `enchantments`.`id`";
+
+			if (Config.backup_enabled)
+				q += " AND `enchantments`.`is_backup` = 0";
+
+			q += ") WHERE (`inventories`.`owner` IN (" + final_players_id
+					+ "0) AND `inventories`.`date` != ?";
+			/*
+			 * if (Config.multiworld) q += " AND `inventories`.`world` = ?";
+			 */
+
+			q += ")";
+
+			PreparedStatement sth = conn.prepareStatement(q);
+			sth.setLong(1, CURRENT_CHECK_EPOCH);
+			// sth.setString(1, final_players_id);
+			/*
+			 * if (Config.multiworld) sth.setString(2, p.getWorld().getName());
+			 */
+			sth.executeUpdate();
+			sth.close();
+			InventorySQL.d(this.hashCode() + " => Cleaning:OldRecordsOfinventories");
+			InventorySQL.d(this.hashCode() + " => "  + q + " - ID hracov: " + final_players_id
+					+ " - datumy: " + CURRENT_CHECK_EPOCH);
 		}
 	}
 
