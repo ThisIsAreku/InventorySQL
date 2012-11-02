@@ -8,12 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import fr.areku.InventorySQL.InventorySQL;
+import fr.areku.InventorySQL.Config;
 
 public class ConnectionManager implements Closeable{
 	private static ConnectionManager instance;
 
 	private boolean ready = false;
-	private static int poolsize = 10;
+	//private static int poolsize = 3;
 	private static long timeToLive = 300000;
 	private static List<JDCConnection> connections;
 	private final ConnectionReaper reaper;
@@ -30,7 +31,7 @@ public class ConnectionManager implements Closeable{
 		this.password = password;
 		// poolsize = Config.PoolSize;
 		ready = true;
-		connections = new ArrayList<JDCConnection>(poolsize);
+		connections = new ArrayList<JDCConnection>(Config.dbPoolSize);
 		reaper = new ConnectionReaper();
 		reaper.start();
 		instance = this;
@@ -99,7 +100,7 @@ public class ConnectionManager implements Closeable{
 				count++;
 			}
 
-			if (i > poolsize) {
+			if (i > Config.dbPoolSize) {
 				connections.remove(conn);
 				count++;
 				conn.terminate();

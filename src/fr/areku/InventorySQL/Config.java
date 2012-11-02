@@ -28,6 +28,7 @@ public class Config {
 	public static String dbPass = null;
 	public static String dbTablePrefix = null;
 	public static String dbUser = null;
+	public static int dbPoolSize = 3;
 
 	public static boolean check_plugin_updates = true;
 	public static boolean checkChest = false;
@@ -36,7 +37,6 @@ public class Config {
 	public static boolean mirrorMode = false;
 	public static int afterLoginDelay = 20;
 	public static boolean usePermissions = false;
-	
 
 	public static boolean backup_enabled = true;
 	public static int backup_cleanup_days = 0;
@@ -71,6 +71,12 @@ public class Config {
 		Config.dbDatabase = plugin.getConfig().getString("mysql.db");
 		Config.dbTablePrefix = plugin.getConfig().getString(
 				"mysql.table-prefix");
+		Config.dbPoolSize = plugin.getConfig().getInt("mysql.pool-size");
+		if (Config.dbPoolSize < 1) {
+			InventorySQL.log(Level.WARNING, "MySQL Pool size is too low (<1)");
+			Config.dbPoolSize = 3;
+		}
+
 		Config.check_interval = plugin.getConfig().getInt("check-interval");
 		Config.check_plugin_updates = plugin.getConfig().getBoolean(
 				"check-plugin-updates");
@@ -78,7 +84,8 @@ public class Config {
 		Config.afterLoginDelay = plugin.getConfig().getInt("after-login-delay");
 		Config.multiworld = plugin.getConfig().getBoolean("multiworld");
 		Config.mirrorMode = plugin.getConfig().getBoolean("mirror-mode");
-		Config.usePermissions = plugin.getConfig().getBoolean("use-permissions");
+		Config.usePermissions = plugin.getConfig()
+				.getBoolean("use-permissions");
 
 		Config.backup_enabled = plugin.getConfig().getBoolean("backup.enabled");
 		Config.backup_cleanup_days = plugin.getConfig().getInt(
@@ -98,8 +105,9 @@ public class Config {
 		}
 		if (Config.update_events.isEmpty() && (reload_count > 0)) {
 			if (reload_count > 0)
-				InventorySQL.log(Level.WARNING,
-						"No update event ! Data will only be updated when using the command");
+				InventorySQL
+						.log(Level.WARNING,
+								"No update event ! Data will only be updated when using the command");
 		}
 
 		Config.dbTable_Inventories = Config.dbTablePrefix + "_inventories";
@@ -114,28 +122,32 @@ public class Config {
 		if (Config.mirrorMode && (reload_count > 0)) {
 			InventorySQL.log("-------------------------------");
 			InventorySQL.log("/!\\ Mirror Mode enabled ! /!\\");
-			InventorySQL.log("All servers that you set up on the same database will be synchronized");
-			/*if (!Config.debug) {
-				Main.log("But.. Mirror mode is not ready yet, so it is disabled");
-				Config.mirrorMode = false;
-			} else {
-				Main.log("DEBUG FEATURE !");
-			}*/
+			InventorySQL
+					.log("All servers that you set up on the same database will be synchronized");
+			/*
+			 * if (!Config.debug) {
+			 * Main.log("But.. Mirror mode is not ready yet, so it is disabled"
+			 * ); Config.mirrorMode = false; } else {
+			 * Main.log("DEBUG FEATURE !"); }
+			 */
 			InventorySQL.log("-------------------------------");
 		}
 
 		plugin.getConfig().save(file);
+
 		File suid = new File(plugin.getDataFolder(), "suid.txt");
 		if (!suid.exists()) {
 			Config.serverUID = UUID.randomUUID().toString();
-			BufferedWriter out = new BufferedWriter(new FileWriter(suid.toString()));
+			BufferedWriter out = new BufferedWriter(new FileWriter(
+					suid.toString()));
 			out.write(Config.serverUID);
 			out.flush();
 			out.close();
 		} else {
 			Scanner scan = new Scanner(suid);
 			scan.useDelimiter("\\Z");
-			Config.serverUID = scan.next().trim();
+			Config.serverUID = scan.next().replace('\r', ' ')
+					.replace('\n', ' ').replace('\t', ' ').trim();
 		}
 		if (reload_count > 0) {
 			InventorySQL.log("Server UID is : " + Config.serverUID);

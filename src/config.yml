@@ -13,6 +13,7 @@ mysql:
   pass: pass
   db: minecraft
   table-prefix: invsql
+  pool-size: 3
 backup:
   enabled: true
   cleanup-days: 5
