@@ -139,6 +139,7 @@ public class SQLCheck implements Runnable {
 						+ Config.dbTable_Users
 						+ "`(`name`, `password`) VALUES ('" + pName + "','')",
 						Statement.RETURN_GENERATED_KEYS));
+				InventorySQL.getPlayerManager().get(pName).updateHash("");
 			}
 			rs.close();
 			sth.close();
@@ -260,6 +261,8 @@ public class SQLCheck implements Runnable {
 			String theInvHash = PlayerManager.computePlayerInventoryHash(p);
 			if (InventorySQL.getPlayerManager().get(pName)
 					.updateHash(theInvHash)) {
+				InventorySQL.d(this.hashCode()
+						+ " => checkPlayers:InventoryModified");
 				/*
 				 * String q = "DELETE `inventories`, `enchantments` FROM `" +
 				 * Config.dbTable_Inventories + "` AS `inventories` LEFT JOIN `"
@@ -294,7 +297,7 @@ public class SQLCheck implements Runnable {
 			}
 			p.saveData();
 		}
-		
+
 		String final_players_id = players_to_remove_sb.toString();
 		if (final_players_id.length() > 0) {
 			String q = "DELETE `inventories`, `enchantments` FROM `"
@@ -322,9 +325,10 @@ public class SQLCheck implements Runnable {
 			 */
 			sth.executeUpdate();
 			sth.close();
-			InventorySQL.d(this.hashCode() + " => Cleaning:OldRecordsOfinventories");
-			InventorySQL.d(this.hashCode() + " => "  + q + " - ID hracov: " + final_players_id
-					+ " - datumy: " + CURRENT_CHECK_EPOCH);
+			InventorySQL.d(this.hashCode()
+					+ " => Cleaning:OldRecordsOfinventories");
+			InventorySQL.d(this.hashCode() + " => " + q + " - IDs: "
+					+ final_players_id + " - time: " + CURRENT_CHECK_EPOCH);
 		}
 	}
 
