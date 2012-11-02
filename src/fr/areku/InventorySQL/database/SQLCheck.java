@@ -139,7 +139,7 @@ public class SQLCheck implements Runnable {
 						+ Config.dbTable_Users
 						+ "`(`name`, `password`) VALUES ('" + pName + "','')",
 						Statement.RETURN_GENERATED_KEYS));
-				InventorySQL.getPlayerManager().get(pName).updateHash("");
+				PlayerManager.getInstance().get(pName).updateHash("");
 			}
 			rs.close();
 			sth.close();
@@ -150,7 +150,7 @@ public class SQLCheck implements Runnable {
 			int removed = 0;
 
 			if (Config.mirrorMode) {
-				boolean fs = InventorySQL.getPlayerManager().get(pName)
+				boolean fs = PlayerManager.getInstance().get(pName)
 						.isFirstSessionCheck();
 				if (doMirroring(userID, p)) {
 					if (fs)
@@ -256,10 +256,10 @@ public class SQLCheck implements Runnable {
 				rs.close();
 				sth.close();
 			}
-			InventorySQL.getPlayerManager().get(pName)
+			PlayerManager.getInstance().get(pName)
 					.updateEpoch(CURRENT_CHECK_EPOCH);
 			String theInvHash = PlayerManager.computePlayerInventoryHash(p);
-			if (InventorySQL.getPlayerManager().get(pName)
+			if (PlayerManager.getInstance().get(pName)
 					.updateHash(theInvHash)) {
 				InventorySQL.d(this.hashCode()
 						+ " => checkPlayers:InventoryModified");
@@ -344,7 +344,7 @@ public class SQLCheck implements Runnable {
 			q += " AND `inventories`.`world` = ?";
 		q += ");";
 		PreparedStatement sth = conn.prepareStatement(q);
-		sth.setLong(1, InventorySQL.getPlayerManager().get(p.getName())
+		sth.setLong(1, PlayerManager.getInstance().get(p.getName())
 				.getEpoch());
 		sth.setInt(2, userID);
 		if (Config.multiworld)

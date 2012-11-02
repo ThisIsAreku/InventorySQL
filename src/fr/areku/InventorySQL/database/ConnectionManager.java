@@ -43,6 +43,10 @@ public class ConnectionManager implements Closeable{
 	public static ConnectionManager getInstance() {
 		return instance;
 	}
+	
+	public static int getNumConn(){
+		return connections.size();
+	}
 
 	/**
 	 * Returns a connection from the pool

@@ -16,6 +16,8 @@ import fr.areku.InventorySQL.InventorySQL;
 import fr.areku.InventorySQL.InventorySQLCommand;
 import fr.areku.InventorySQL.InventorySQLCommandListener;
 import fr.areku.InventorySQL.database.CoreSQLItem;
+import fr.areku.InventorySQL.database.ConnectionManager;
+import fr.areku.InventorySQL.PlayerManager;
 
 public class Commandinvsql extends InventorySQLCommand {
 
@@ -38,6 +40,25 @@ public class Commandinvsql extends InventorySQLCommand {
 			}
 			sendMessage(cs, ChatColor.YELLOW + "Reloading InventorySQL");
 			getParent().plugin.reload();
+			return true;
+		}
+
+		if ("debug".equals(args[0])) {
+			if (!SenderCan(cs, "invsql.debug", true)) {
+				sendMessage(cs, ChatColor.RED + "You cannot use this command");
+				return true;
+			}
+			if (!Config.debug) {
+				sendMessage(cs, ChatColor.RED + "Debug isn't enabled");
+				return true;
+			}
+			sendMessage(cs, ChatColor.YELLOW
+					+ "InventorySQL - DEBUG INFORMATIONS");
+			sendMessage(cs, ChatColor.YELLOW + "Connection pool size : "
+					+ ConnectionManager.getNumConn() + "/" + Config.dbPoolSize);
+			sendMessage(cs, ChatColor.YELLOW + "Player cache : "
+					+ PlayerManager.getNumPlayers());
+			sendMessage(cs, ChatColor.YELLOW + "------------------");
 			return true;
 		}
 

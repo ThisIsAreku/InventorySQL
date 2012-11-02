@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public class PlayerManager {
+	private static PlayerManager instance;
 	private Map<String, InvSQLPlayer> playerMap = null;
 	private File f;
 
@@ -28,6 +29,15 @@ public class PlayerManager {
 		if (f.exists()) {
 			loadDatas();
 		}
+		instance = this;
+	}
+
+	public static PlayerManager getInstance() {
+		return instance;
+	}
+
+	public static int getNumPlayers() {
+		return instance.playerMap.size();
 	}
 
 	public void saveDatas() {

@@ -40,3 +40,6 @@ permissions:
     default: op
     children:
       invsql.check.me: true
+  invsql.debug:
+    description: 'Access to /invsql debug'
+    default: op

@@ -20,7 +20,7 @@ public class InventorySQL extends JavaPlugin {
 	private static InventorySQL instance;
 
 	private CoreSQLProcess coreSQLProcess;
-	private PlayerManager playerManager;
+	// private PlayerManager playerManager;
 
 	private UpdateEventListener playerListener;
 	private InventorySQLCommandListener commandListener;
@@ -86,7 +86,7 @@ public class InventorySQL extends JavaPlugin {
 	public void onDisable() {
 		try {
 			getCoreSQLProcess().onDisable();
-			getPlayerManager().saveDatas();
+			PlayerManager.getInstance().saveDatas();
 		} catch (Exception e) {
 			logException(e, "Error while disabling..");
 		}
@@ -108,8 +108,7 @@ public class InventorySQL extends JavaPlugin {
 			this.Disable();
 			return;
 		}
-		this.playerManager = new PlayerManager(new File(getDataFolder(),
-				"players.txt"));
+		new PlayerManager(new File(getDataFolder(), "players.txt"));
 		this.coreSQLProcess = new CoreSQLProcess(this);
 		this.playerListener = new UpdateEventListener(this);
 		this.commandListener = new InventorySQLCommandListener(this);
@@ -208,9 +207,9 @@ public class InventorySQL extends JavaPlugin {
 		return instance.vaultPlugin;
 	}
 
-	public static PlayerManager getPlayerManager() {
+	/*public static PlayerManager getPlayerManager() {
 		return instance.playerManager;
-	}
+	}*/
 
 	public static CoreSQLProcess getCoreSQLProcess() {
 		return instance.coreSQLProcess;
