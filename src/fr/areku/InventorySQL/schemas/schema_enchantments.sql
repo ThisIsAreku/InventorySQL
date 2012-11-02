@@ -3,3 +3,4 @@ ALTER IGNORE TABLE `%%TABLENAME%%` ADD `ench` int(11) NOT NULL AFTER `ench_index
 ALTER IGNORE TABLE `%%TABLENAME%%` ADD `level` int(11) NOT NULL AFTER `ench`;
 ALTER IGNORE TABLE `%%TABLENAME%%` ADD `is_backup` tinyint(4) NOT NULL AFTER `level`;
 ALTER IGNORE TABLE `%%TABLENAME%%` DROP PRIMARY KEY
+ALTER IGNORE TABLE `%%TABLENAME%%` ADD INDEX `id_is_backup` (`id`, `is_backup`), ADD INDEX `id` (`id`);

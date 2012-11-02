@@ -10,3 +10,4 @@ ALTER IGNORE TABLE `%%TABLENAME%%` ADD `event` varchar(100) NOT NULL AFTER `date
 ALTER IGNORE TABLE `%%TABLENAME%%` ADD `suid` varchar(36) NOT NULL AFTER `event`;
 ALTER IGNORE TABLE `%%TABLENAME%%` DROP INDEX `inventory`;
 ALTER IGNORE TABLE `%%TABLENAME%%` CHANGE  `date`  `date` BIGINT NOT NULL;
+ALTER IGNORE TABLE `%%TABLENAME%%` ADD INDEX `owner_world` (`owner`, `world`), ADD INDEX `id_owner_world` (`id`, `owner`, `world`);
