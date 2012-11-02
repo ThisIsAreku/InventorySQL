@@ -55,7 +55,11 @@ public abstract class InventorySQLCommand implements CommandExecutor {
 
 	public boolean SenderCan(CommandSender cs, String permission, boolean mustopped) {
 		if (Config.usePermissions) {
-			return cs.hasPermission(permission);
+			if(InventorySQL.isUsingVault()){
+				return InventorySQL.getPerm().has(cs, permission);
+			}else{
+				return cs.hasPermission(permission);
+			}
 		} else {
 			if(mustopped){
 				return cs.isOp();
