@@ -8,7 +8,6 @@ import org.bukkit.entity.Player;
 import fr.areku.InventorySQL.InventorySQL;
 import fr.areku.InventorySQL.InventorySQLCommand;
 import fr.areku.InventorySQL.InventorySQLCommandListener;
-import fr.areku.InventorySQL.database.CoreSQLItem;
 
 public class Commandichk extends InventorySQLCommand {
 
@@ -32,12 +31,8 @@ public class Commandichk extends InventorySQLCommand {
 		}
 		sendMessage(cs,
 				ChatColor.GREEN + InventorySQL.getMessage("check-yourself"));
-		InventorySQL
-				.getCoreSQLProcess()
-				.runCheckThisTask(
-						new CoreSQLItem(new Player[] { (Player) cs })
-								.setCommandSender(cs),
-						"Command", true, 0);
+		InventorySQL.getCoreSQLProcess().runPlayerCheck((Player) cs, "Command",
+				cs);
 		return true;
 	}
 

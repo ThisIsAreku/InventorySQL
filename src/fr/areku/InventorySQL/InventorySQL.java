@@ -56,8 +56,7 @@ public class InventorySQL extends JavaPlugin {
 		log(Level.SEVERE, "---------------------------------------");
 		log(Level.SEVERE, "--- an unexpected error has occured ---");
 		log(Level.SEVERE, "-- please send line below to the dev --");
-		log(Level.SEVERE, "InventorySQL version "
-				+ instance.getDescription().getVersion());
+		log(Level.SEVERE, "InventorySQL version " + getVersion());
 		log(Level.SEVERE, "Bukkit version " + Bukkit.getVersion());
 		if (InventorySQL.isUsingAuthenticator()) {
 			log(Level.SEVERE, "Authenticator version "
@@ -82,8 +81,13 @@ public class InventorySQL extends JavaPlugin {
 				format);
 	}
 
+	public static String getVersion() {
+		return instance.getDescription().getVersion();
+	}
+
 	@Override
 	public void onDisable() {
+		ready = false;
 		try {
 			getCoreSQLProcess().onDisable();
 			PlayerManager.getInstance().saveDatas();
@@ -207,9 +211,10 @@ public class InventorySQL extends JavaPlugin {
 		return instance.vaultPlugin;
 	}
 
-	/*public static PlayerManager getPlayerManager() {
-		return instance.playerManager;
-	}*/
+	/*
+	 * public static PlayerManager getPlayerManager() { return
+	 * instance.playerManager; }
+	 */
 
 	public static CoreSQLProcess getCoreSQLProcess() {
 		return instance.coreSQLProcess;

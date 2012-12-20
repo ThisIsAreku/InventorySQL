@@ -7,10 +7,12 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import fr.areku.InventorySQL.Config;
 import fr.areku.InventorySQL.InventorySQL;
+import fr.areku.InventorySQL.database.methods.PlayerCheck;
 
 /**
  * 
@@ -34,7 +36,7 @@ public class CoreSQLProcess implements Runnable {
 		this.connectionManager = new ConnectionManager("jdbc:mysql://"
 				+ Config.dbHost + "/" + Config.dbDatabase, Config.dbUser,
 				Config.dbPass);
-		Bukkit.getScheduler().scheduleAsyncDelayedTask(plugin, this);
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, this);
 	}
 
 	/**
@@ -64,13 +66,13 @@ public class CoreSQLProcess implements Runnable {
 			if (Config.check_interval > 0) {
 				InventorySQL.d("Init Check at interval "
 						+ Config.check_interval);
-				Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin,
-						new SQLCheck(this, "Scheduler"), Config.check_interval,
-						Config.check_interval);
+				Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,
+						new PlayerCheck(this, "Scheduler", null),
+						Config.check_interval, Config.check_interval);
 			}
 
 			if (Config.backup_enabled)
-				Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin,
+				Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,
 						new SQLBackup(this).clean(), Config.check_interval,
 						Config.check_interval * 2);
 
@@ -85,16 +87,23 @@ public class CoreSQLProcess implements Runnable {
 
 	private void runTask(Runnable task, int delay) {
 		if (this.databaseReady)
-			Bukkit.getScheduler().scheduleAsyncDelayedTask(plugin, task, delay);
+			Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, task,
+					delay);
 	}
 
-	public void runCheckThisTask(CoreSQLItem i, String initiator,
+	public void runPlayerCheck(String initiator, CommandSender cs,
 			boolean doGive, int delay) {
-		runTask(new SQLCheck(this, initiator).manualCheck(i, doGive), delay);
+		runTask(new PlayerCheck(this, initiator, cs).setDoGive(doGive), delay);
 	}
-
-	public void runCheckAllTask(int delay) {
-		runTask(new SQLCheck(this, "CheckAll").manualCheck(), delay);
+	public void runPlayerCheck(Player p, String initiator, CommandSender cs,
+			boolean doGive, int delay) {
+		runTask(new PlayerCheck(this, initiator, cs).setDoGive(doGive).setTarget(p), delay);
+	}
+	public void runPlayerCheck(Player p, String initiator, CommandSender cs) {
+		runTask(new PlayerCheck(this, initiator, cs).setTarget(p), 0);
+	}
+	public void runPlayerCheck(Player[] p, String initiator, CommandSender cs) {
+		runTask(new PlayerCheck(this, initiator, cs).setTarget(p), 0);
 	}
 
 	public void runBackupClean() {

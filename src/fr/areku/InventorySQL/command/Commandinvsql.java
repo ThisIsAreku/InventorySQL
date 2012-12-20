@@ -15,9 +15,8 @@ import fr.areku.InventorySQL.Config;
 import fr.areku.InventorySQL.InventorySQL;
 import fr.areku.InventorySQL.InventorySQLCommand;
 import fr.areku.InventorySQL.InventorySQLCommandListener;
-import fr.areku.InventorySQL.database.CoreSQLItem;
-import fr.areku.InventorySQL.database.ConnectionManager;
 import fr.areku.InventorySQL.PlayerManager;
+import fr.areku.InventorySQL.database.ConnectionManager;
 
 public class Commandinvsql extends InventorySQLCommand {
 
@@ -97,31 +96,28 @@ public class Commandinvsql extends InventorySQLCommand {
 							ChatColor.GREEN
 									+ InventorySQL
 											.getMessage("check-all-players"));
-					InventorySQL.getCoreSQLProcess().runCheckAllTask(0);
+					InventorySQL.getCoreSQLProcess().runPlayerCheck("Command",
+							null, true, 0);
 					return true;
 				}
 				Player pT;
-				List<Player> p = new ArrayList<Player>();
+				List<Player> nP = new ArrayList<Player>();
 
 				for (int i = 1; i < args.length; i++) {
 					pT = Bukkit.getPlayerExact(args[i]);
 					if (pT != null) {
-						if (!p.contains(pT))
-							p.add(pT);
+						if (!nP.contains(pT))
+							nP.add(pT);
 					}
 				}
-				if (p.size() > 0) {
+				if (nP.size() > 0) {
+					InventorySQL.getCoreSQLProcess().runPlayerCheck(
+							nP.toArray(new Player[] {}), "Command", null);
 					sendMessage(
 							cs,
 							ChatColor.GREEN
 									+ InventorySQL.getMessage(
-											"check-n-players", p.size()));
-					InventorySQL
-							.getCoreSQLProcess()
-							.runCheckThisTask(
-									new CoreSQLItem(p.toArray(new Player[] {}))
-											.setCommandSender(cs),
-									"Command", true, 0);
+											"check-n-players", nP));
 				} else {
 					sendMessage(
 							cs,
@@ -143,12 +139,8 @@ public class Commandinvsql extends InventorySQLCommand {
 						cs,
 						ChatColor.GREEN
 								+ InventorySQL.getMessage("check-yourself"));
-				InventorySQL
-						.getCoreSQLProcess()
-						.runCheckThisTask(
-								new CoreSQLItem(new Player[] { (Player) cs })
-										.setCommandSender(cs),
-								"Command", true, 0);
+				InventorySQL.getCoreSQLProcess().runPlayerCheck((Player) cs,
+						"Command", cs);
 			}
 		}
 

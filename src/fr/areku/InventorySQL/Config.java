@@ -22,6 +22,7 @@ public class Config {
 	public static String dbTable_Users = "";
 	public static String dbTable_Enchantments = "";
 	public static String dbTable_Backups = "";
+	public static String dbTable_Meta = "";
 
 	public static String dbDatabase = null;
 	public static String dbHost = null;
@@ -115,6 +116,7 @@ public class Config {
 		Config.dbTable_Users = Config.dbTablePrefix + "_users";
 		Config.dbTable_Enchantments = Config.dbTablePrefix + "_enchantments";
 		Config.dbTable_Backups = Config.dbTablePrefix + "_backups";
+		Config.dbTable_Meta = Config.dbTablePrefix + "_meta";
 
 		Config.check_interval *= 20;
 		Config.afterLoginDelay *= 20;

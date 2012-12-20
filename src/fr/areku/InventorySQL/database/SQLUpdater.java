@@ -23,6 +23,7 @@ public class SQLUpdater {
 		tableFirstRow.put("_pendings",
 				"varchar(36) NOT NULL, PRIMARY KEY (`id`)");
 		tableFirstRow.put("_enchantments", "varchar(36) NOT NULL");
+		tableFirstRow.put("_meta", "varchar(36) NOT NULL");
 		tableFirstRow.put("_users",
 				"int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)");
 	}
@@ -39,6 +40,7 @@ public class SQLUpdater {
 			check_table_version("_backups", conn);
 			check_table_version("_pendings", conn);
 			check_table_version("_enchantments", conn);
+			check_table_version("_meta", conn);
 			check_table_version("_users", conn);
 			/*
 			 * if (Config.backup_enabled) check_table_version("_backup", conn);
@@ -46,8 +48,10 @@ public class SQLUpdater {
 			conn.close();
 			return true;
 		} catch (SQLException ex) {
-			InventorySQL.log(Level.SEVERE, "Cannot connect to mySQL database !");
-			InventorySQL.log(Level.SEVERE, "Message: " + ex.getLocalizedMessage());
+			InventorySQL
+					.log(Level.SEVERE, "Cannot connect to mySQL database !");
+			InventorySQL.log(Level.SEVERE,
+					"Message: " + ex.getLocalizedMessage());
 		} catch (Exception ex) {
 			InventorySQL.logException(ex, "table need update?");
 		}
@@ -95,7 +99,8 @@ public class SQLUpdater {
 
 	private void update_table_fields(String selector, JDCConnection conn)
 			throws SQLException {
-		InventorySQL.log("Table '" + Config.dbTablePrefix + selector + "' need update");
+		InventorySQL.log("Table '" + Config.dbTablePrefix + selector
+				+ "' need update");
 		String query = read(plugin
 				.getResource("fr/areku/InventorySQL/schemas/schema" + selector
 						+ ".sql"));
@@ -114,7 +119,8 @@ public class SQLUpdater {
 			conn.createStatement().executeUpdate(query);
 		} catch (SQLException e) {
 		}
-		InventorySQL.log("'" + Config.dbTablePrefix + selector + "' table: update done");
+		InventorySQL.log("'" + Config.dbTablePrefix + selector
+				+ "' table: update done");
 	}
 
 	private String read(InputStream src) {

@@ -119,6 +119,7 @@ public class PlayerManager {
 			for (Entry<String, Object> e : s.serialize().entrySet())
 				serialized.append(e.getKey() + " => " + e.getValue());
 		}
+		serialized.append(InventorySQL.getVersion());
 		try {
 			MessageDigest digest = MessageDigest.getInstance("MD5");
 			digest.update(serialized.toString().getBytes("UTF-8"));

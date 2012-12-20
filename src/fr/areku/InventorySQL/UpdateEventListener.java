@@ -2,7 +2,6 @@ package fr.areku.InventorySQL;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
 import org.bukkit.event.EventPriority;
@@ -17,7 +16,6 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.EventExecutor;
 
 import fr.areku.Authenticator.events.PlayerOfflineModeLogin;
-import fr.areku.InventorySQL.database.CoreSQLItem;
 
 public class UpdateEventListener implements Listener {
 	private InventorySQL plugin;
@@ -106,9 +104,8 @@ public class UpdateEventListener implements Listener {
 
 	private void registerThis(Class<? extends Event> eventClass,
 			EventExecutor exec) {
-		Bukkit.getPluginManager()
-				.registerEvent(eventClass, this, EventPriority.NORMAL, exec,
-						this.plugin, true);
+		Bukkit.getPluginManager().registerEvent(eventClass, this,
+				EventPriority.NORMAL, exec, this.plugin, true);
 	}
 
 	public void registerOfflineModeSupport() {
@@ -125,14 +122,17 @@ public class UpdateEventListener implements Listener {
 
 	public void doPlayerJoin(PlayerJoinEvent event) {
 		if (Config.mirrorMode) {
-			event.getPlayer().sendMessage(ChatColor.RED + "[InventorySQL] " + InventorySQL.getMessage("mirror-wait", event.getPlayer().getDisplayName()));
+			event.getPlayer().sendMessage(
+					ChatColor.RED
+							+ "[InventorySQL] "
+							+ InventorySQL.getMessage("mirror-wait", event
+									.getPlayer().getDisplayName()));
 		}
 		if (InventorySQL.isUsingAuthenticator())
 			return;
 		InventorySQL.d("onPlayerJoin(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getPlayer() }),
-				"PlayerJoin", true, Config.afterLoginDelay);
+		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+				"PlayerJoin", event.getPlayer());
 	}
 
 	public void doPlayerQuit(PlayerQuitEvent event) {
@@ -142,9 +142,8 @@ public class UpdateEventListener implements Listener {
 				return;
 		}
 		InventorySQL.d("onPlayerQuit(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getPlayer() }),
-				"PlayerQuit", false, 0);
+		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+				"PlayerJoin", event.getPlayer(), false, 0);
 	}
 
 	public void doPlayerChangedWorld(PlayerChangedWorldEvent event) {
@@ -154,9 +153,8 @@ public class UpdateEventListener implements Listener {
 				return;
 		}
 		InventorySQL.d("onPlayerChangedWorld(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getPlayer() }),
-				"PlayerChangedWorld", false, 0);
+		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+				"PlayerChangedWorld", event.getPlayer(), false, 0);
 	}
 
 	public void doPlayerRespawn(PlayerRespawnEvent event) {
@@ -166,9 +164,8 @@ public class UpdateEventListener implements Listener {
 				return;
 		}
 		InventorySQL.d("onPlayerRespawn(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getPlayer() }),
-				"PlayerRespawn", true, 0);
+		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+				"PlayerRespawn", event.getPlayer());
 	}
 
 	public void doPlayerDeath(PlayerDeathEvent event) {
@@ -178,30 +175,27 @@ public class UpdateEventListener implements Listener {
 				return;
 		}
 		InventorySQL.d("onPlayerDeath(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getEntity() }),
-				"PlayerDeath", false, 0);
+		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getEntity(),
+				"PlayerRespawn", event.getEntity(), false, 0);
 	}
 
 	public void doPlayerBedEnter(PlayerBedEnterEvent event) {
 		InventorySQL.d("onPlayerBedEnter(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getPlayer() }),
-				"PlayerBedEnter", true, 0);
+		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+				"PlayerBedEnter", event.getPlayer());
 	}
 
 	public void doPlayerBedLeave(PlayerBedLeaveEvent event) {
 		InventorySQL.d("onPlayerBedLeave(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getPlayer() }),
-				"PlayerBedLeave", true, 0);
+		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+				"PlayerBedLeave", event.getPlayer());
 	}
 
 	public void doPlayerOfflineModeLogin(PlayerOfflineModeLogin event) {
-		InventorySQL.d("onPlayerOfflineModeLogin(" + event.getPlayer().toString() + ")");
-		InventorySQL.getCoreSQLProcess().runCheckThisTask(
-				new CoreSQLItem(new Player[] { event.getPlayer() }),
-				"PlayerOfflineModeLogin", true, 0);
+		InventorySQL.d("onPlayerOfflineModeLogin("
+				+ event.getPlayer().toString() + ")");
+		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+				"PlayerOfflineModeLogin", event.getPlayer());
 	}
 
 }

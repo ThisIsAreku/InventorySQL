@@ -1,6 +1,5 @@
 # InventorySQL config - by ThisIsAreku - http://dev.bukkit.org/server-mods/inventorysql/
 check-interval: 600
-after-login-delay: 1
 check-plugin-updates: true
 no-creative: true
 multiworld: true

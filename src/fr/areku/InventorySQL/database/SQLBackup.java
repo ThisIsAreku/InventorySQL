@@ -85,7 +85,9 @@ public class SQLBackup implements Runnable {
 							+ Config.dbTable_Backups
 							+ "` AS `backups` LEFT JOIN `"
 							+ Config.dbTable_Enchantments
-							+ "` AS `enchantments` ON (`backups`.`id` = `enchantments`.`id` AND `enchantments`.`is_backup` = 1)"
+							+ "` AS `enchantments` ON (`backups`.`id` = `enchantments`.`id` AND `enchantments`.`is_backup` = 1) LEFT JOIN `"
+							+ Config.dbTable_Meta
+							+ "` AS `meta` ON (`backups`.`id` = `meta`.`id` AND `meta`.`is_backup` = 1)"
 							+ " WHERE `backups`.`date` < (CURRENT_TIMESTAMP - INTERVAL '"+Config.backup_cleanup_days+"' DAY);";
 					PreparedStatement sth = conn.prepareStatement(q, Statement.RETURN_GENERATED_KEYS);
 					sth.executeUpdate();
