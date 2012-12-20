@@ -1,13 +1,5 @@
 <?php
-/* items names */
-$items[] = array();
-$items_version = "1.1";
-
-/************************************
- * Setup blocks and items name here
- * Minecraft 1.1
-/************************************/
-
+//Blocks data
 $items[0] = 'AIR';
 $items[1] = 'STONE';
 $items[2] = 'GRASS';
@@ -131,6 +123,29 @@ $items[119] = 'ENDER_PORTAL';
 $items[120] = 'ENDER_PORTAL_FRAME';
 $items[121] = 'ENDER_STONE';
 $items[122] = 'DRAGON_EGG';
+$items[123] = 'REDSTONE_LAMP_OFF';
+$items[124] = 'REDSTONE_LAMP_ON';
+$items[125] = 'WOOD_DOUBLE_STEP';
+$items[126] = 'WOOD_STEP';
+$items[127] = 'COCOA';
+$items[128] = 'SANDSTONE_STAIRS';
+$items[129] = 'EMERALD_ORE';
+$items[130] = 'ENDER_CHEST';
+$items[131] = 'TRIPWIRE_HOOK';
+$items[132] = 'TRIPWIRE';
+$items[133] = 'EMERALD_BLOCK';
+$items[134] = 'SPRUCE_WOOD_STAIRS';
+$items[135] = 'BIRCH_WOOD_STAIRS';
+$items[136] = 'JUNGLE_WOOD_STAIRS';
+$items[137] = 'COMMAND';
+$items[138] = 'BEACON';
+$items[139] = 'COBBLE_WALL';
+$items[140] = 'FLOWER_POT';
+$items[141] = 'CARROT';
+$items[142] = 'POTATO';
+$items[143] = 'WOOD_BUTTON';
+$items[144] = 'SKULL';
+$items[145] = 'ANVIL';
 $items[256] = 'IRON_SPADE';
 $items[257] = 'IRON_PICKAXE';
 $items[258] = 'IRON_AXE';
@@ -259,6 +274,23 @@ $items[380] = 'CAULDRON_ITEM';
 $items[381] = 'EYE_OF_ENDER';
 $items[382] = 'SPECKLED_MELON';
 $items[383] = 'MONSTER_EGG';
+$items[384] = 'EXP_BOTTLE';
+$items[385] = 'FIREBALL';
+$items[386] = 'BOOK_AND_QUILL';
+$items[387] = 'WRITTEN_BOOK';
+$items[388] = 'EMERALD';
+$items[389] = 'ITEM_FRAME';
+$items[390] = 'FLOWER_POT_ITEM';
+$items[391] = 'CARROT_ITEM';
+$items[392] = 'POTATO_ITEM';
+$items[393] = 'BAKED_POTATO';
+$items[394] = 'POISONOUS_POTATO';
+$items[395] = 'EMPTY_MAP';
+$items[396] = 'GOLDEN_CARROT';
+$items[397] = 'SKULL_ITEM';
+$items[398] = 'CARROT_STICK';
+$items[399] = 'NETHER_STAR';
+$items[400] = 'PUMPKIN_PIE';
 $items[2256] = 'GOLD_RECORD';
 $items[2257] = 'GREEN_RECORD';
 $items[2258] = 'RECORD_3';
@@ -270,3 +302,28 @@ $items[2263] = 'RECORD_8';
 $items[2264] = 'RECORD_9';
 $items[2265] = 'RECORD_10';
 $items[2266] = 'RECORD_11';
+$items[2267] = 'RECORD_12';
+//----------------
+$ench[34] = array('name' => 'DURABILITY', 'startlevel' => 1, 'maxlevel' => 3);
+$ench[0] = array('name' => 'PROTECTION_ENVIRONMENTAL', 'startlevel' => 1, 'maxlevel' => 4);
+$ench[35] = array('name' => 'LOOT_BONUS_BLOCKS', 'startlevel' => 1, 'maxlevel' => 3);
+$ench[1] = array('name' => 'PROTECTION_FIRE', 'startlevel' => 1, 'maxlevel' => 4);
+$ench[32] = array('name' => 'DIG_SPEED', 'startlevel' => 1, 'maxlevel' => 5);
+$ench[2] = array('name' => 'PROTECTION_FALL', 'startlevel' => 1, 'maxlevel' => 4);
+$ench[33] = array('name' => 'SILK_TOUCH', 'startlevel' => 1, 'maxlevel' => 1);
+$ench[3] = array('name' => 'PROTECTION_EXPLOSIONS', 'startlevel' => 1, 'maxlevel' => 4);
+$ench[4] = array('name' => 'PROTECTION_PROJECTILE', 'startlevel' => 1, 'maxlevel' => 4);
+$ench[5] = array('name' => 'OXYGEN', 'startlevel' => 1, 'maxlevel' => 3);
+$ench[6] = array('name' => 'WATER_WORKER', 'startlevel' => 1, 'maxlevel' => 1);
+$ench[51] = array('name' => 'ARROW_INFINITE', 'startlevel' => 1, 'maxlevel' => 1);
+$ench[17] = array('name' => 'DAMAGE_UNDEAD', 'startlevel' => 1, 'maxlevel' => 5);
+$ench[50] = array('name' => 'ARROW_FIRE', 'startlevel' => 1, 'maxlevel' => 1);
+$ench[16] = array('name' => 'DAMAGE_ALL', 'startlevel' => 1, 'maxlevel' => 5);
+$ench[49] = array('name' => 'ARROW_KNOCKBACK', 'startlevel' => 1, 'maxlevel' => 2);
+$ench[19] = array('name' => 'KNOCKBACK', 'startlevel' => 1, 'maxlevel' => 2);
+$ench[48] = array('name' => 'ARROW_DAMAGE', 'startlevel' => 1, 'maxlevel' => 5);
+$ench[18] = array('name' => 'DAMAGE_ARTHROPODS', 'startlevel' => 1, 'maxlevel' => 5);
+$ench[21] = array('name' => 'LOOT_BONUS_MOBS', 'startlevel' => 1, 'maxlevel' => 3);
+$ench[20] = array('name' => 'FIRE_ASPECT', 'startlevel' => 1, 'maxlevel' => 2);
+
+?>

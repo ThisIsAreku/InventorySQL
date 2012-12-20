@@ -1,9 +1,10 @@
 <?php
-/* configuration */
-$host = 'localhost';
-$user = 'root';
-$pass = '1234';
-$database = 'minecraft';
-$table = 'InventorySQL';
-$admin_pw = 'admin';
+
+$invsql_mysqlhost = "localhost";
+$invsql_mysqluser = "root";
+$invsql_mysqlpass = "";
+$invsql_mysqldb = "minecraft";
+
+$invsql_tableprefix = 'invsql';
+
 ?>
