@@ -1,0 +1,43 @@
+#inventory-table
+{
+	background-color: #C6C6C6;
+	position: relative;
+	border-collapse:separate;
+	border-spacing: 2px;
+	border-radius: 10px;
+	margin: 0 auto;
+	padding: 10px;
+	/*min-width: 480px;*/
+}
+#inventory-table td
+{
+	position: relative;
+	background-color: #8B8B8B;
+	height: 50px;
+	width: 50px;
+	border-bottom: solid 2px #FFFFFF;
+	border-right: solid 2px #FFFFFF;
+	border-left: solid 2px #373737;
+	border-top: solid 2px #373737;
+}
+#inventory-table td.clickable
+{
+	cursor: pointer;
+}
+#slot-detail th{
+	width: 20%;
+}
+#reload-pendings i, #reload-inventory i {
+	vertical-align: middle;
+}
+#reload-pendings i.ani, #reload-inventory i.ani{
+	-moz-transition: all 1s ease;
+	-webkit-transition: all 1s ease;
+	-o-transition: all 1s ease;
+	transition: all 1s ease;
+}
+#reload-pendings i.rotate, #reload-inventory i.rotate{
+	-moz-transform:rotate(360deg);
+	-webkit-transform:rotate(360deg);
+	-o-transform:rotate(360deg);
+}

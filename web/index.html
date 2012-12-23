@@ -20,6 +20,7 @@
       }
     </style>
     <link href="./css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="./css/site.css" rel="stylesheet">
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
@@ -82,30 +83,99 @@
             <h1>InventorySQL</h1>
             <p>Click on a user on the left to see his inventory</p>
           </div>
+		  <div id="user-data" class="collapse">
           <div class="row-fluid">
-            <div class="span6">
-              <h2>Heading</h2>
-              <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-              <p><a class="btn" href="#">View details &raquo;</a></p>
+            <div class="span8">
+              <h2>Inventory <a href="#" id="reload-inventory"><i class="icon icon-refresh ani">&nbsp;</i></a></h2>
+              <table id="inventory-table">
+				<tr><td class="slot-103"></td></tr>
+				<tr><td class="slot-102"></td></tr>
+				<tr><td class="slot-101"></td></tr>
+				<tr><td class="slot-100"></td></tr>
+				<tr>
+					<td class="slot-9"></td>
+					<td class="slot-10"></td>
+					<td class="slot-11"></td>
+					<td class="slot-12"></td>
+					<td class="slot-13"></td>
+					<td class="slot-14"></td>
+					<td class="slot-15"></td>
+					<td class="slot-16"></td>
+					<td class="slot-17"></td>
+				</tr>
+				<tr>
+					<td class="slot-18"></td>
+					<td class="slot-19"></td>
+					<td class="slot-20"></td>
+					<td class="slot-21"></td>
+					<td class="slot-22"></td>
+					<td class="slot-23"></td>
+					<td class="slot-24"></td>
+					<td class="slot-25"></td>
+					<td class="slot-26"></td>
+				</tr>
+				<tr>
+					<td class="slot-27"></td>
+					<td class="slot-28"></td>
+					<td class="slot-29"></td>
+					<td class="slot-30"></td>
+					<td class="slot-31"></td>
+					<td class="slot-32"></td>
+					<td class="slot-33"></td>
+					<td class="slot-34"></td>
+					<td class="slot-35"></td>
+				</tr>
+				<tr>
+					<td class="slot-0"></td>
+					<td class="slot-1"></td>
+					<td class="slot-2"></td>
+					<td class="slot-3"></td>
+					<td class="slot-4"></td>
+					<td class="slot-5"></td>
+					<td class="slot-6"></td>
+					<td class="slot-7"></td>
+					<td class="slot-8"></td>
+				</tr>
+				</table>
             </div><!--/span-->
-            <div class="span6">
-              <h2>Heading</h2>
-              <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-              <p><a class="btn" href="#">View details &raquo;</a></p>
+            <div class="span4 fade">
+              <h2>Details</h2>
+				<table class="table" id="slot-detail">
+					<tr><th>Name</th><td class="name">0</td></tr>
+					<tr><th>id</th><td class="id">0</td></tr>
+					<tr><th>data</th><td class="data">0</td></tr>
+					<tr><th>damage</th><td class="damage">0</td></tr>
+					<tr><th>count</th><td class="count">0</td></tr>
+				</table>
+				<div class="input-append">
+				  <input class="input-medium" id="slot-addmore" type="number">
+				  <button class="btn" type="button" data-loading-text="Loading...">Add to pendings &raquo;</button>
+				</div>
             </div><!--/span-->
           </div><!--/row-->
           <div class="row-fluid">
-            <div class="span6">
-              <h2>Heading</h2>
-              <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-              <p><a class="btn" href="#">View details &raquo;</a></p>
+            <div class="span8">
+              <h2>Pendings <a href="#" id="reload-pendings"><i class="icon icon-refresh">&nbsp;</i></a></h2>
+				<table class="table" id="pendings-table">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>id</th>
+						<th>data</th>
+						<th>damage</th>
+						<th>count</th>
+						<th>-</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+				</table>
             </div><!--/span-->
-            <div class="span6">
-              <h2>Heading</h2>
-              <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-              <p><a class="btn" href="#">View details &raquo;</a></p>
+            <div class="span4 fade">
+              <h2>Details</h2>
             </div><!--/span-->
           </div><!--/row-->
+		  </div>
         </div><!--/span-->
       </div><!--/row-->
 
