@@ -2,6 +2,16 @@
 require 'config.inc.php';
 require 'data.inc.php';
 
+function generate_uuid()
+{
+    $md5 = md5(uniqid('', true));
+    return substr($md5, 0, 8 ) . '-' .
+            substr($md5, 8, 4) . '-' .
+            substr($md5, 12, 4) . '-' .
+            substr($md5, 16, 4) . '-' .
+            substr($md5, 20, 12);
+}
+
 session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -19,6 +29,9 @@ switch($_GET['p'])
 		$r = $dbh->query("SHOW TABLE STATUS LIKE '".$invsql_tableprefix."_inventories'")->fetch();
 		$plugin = explode(':', $r['Comment'], 2);
 		echo json_encode(array('success' => true, 'plugin' => $plugin[1], 'web' => $VERSION));
+	break;
+	case 'items':
+		echo json_encode(array('success' => true, 'items' => $items));
 	break;
 	case 'users':
 		$q = $dbh->query('SELECT `id`, `name` FROM `'.$invsql_tableprefix.'_users`');
@@ -139,5 +152,18 @@ switch($_GET['p'])
 				$inv[$s]['meta'][] = array('key' => $row['meta_key'], 'value' => $row['meta_value']);
 			}
 		}
-		echo json_encode(array('success' => true, 'pendings' => $inv));		
+		echo json_encode(array('success' => true, 'pendings' => $inv));
+	break;
+	case 'give':
+		$uid = generate_uuid();
+		$q = $dbh->prepare('INSERT INTO `'.$invsql_tableprefix.'_pendings` (`id` ,`owner` ,`world` ,`item` ,`data` ,`damage` ,`count`)VALUES (?,  ?,  ?,  ?,  ?,  ?,  ?);');
+		$q->execute(array($uid, $_GET['u'], $_GET['w'], $_GET['item'], $_GET['data'], $_GET['damage'], $_GET['count']));
+		$item = array(
+		'name' => $items[$_GET['item']],
+		'data' => $_GET['data'],
+		'damage' => $_GET['damage'],
+		'count' => $_GET['count'],
+		'id' => $_GET['item']
+		);
+		echo json_encode(array('success' => true, 'item' => $item));		
 }

@@ -33,6 +33,34 @@ $(function(){
 	$('#pendings-table').on("click", "a.details", function(event){
 		event.preventDefault();
 	});
+	$('#slot-addmore-give').click(function(e){
+		item = $('#slot-detail .id').text();
+		data = $('#slot-detail .data').text();
+		damage = $('#slot-detail .damage').text();
+		count = $('#slot-addmore-count').val();
+		$.getJSON('./api.php',{'p': 'give','u': current_userid,'w': 'world', 'item': item, 'data': data, 'damage': damage, 'count': count}, function(data){
+			if(data.success)
+			{
+				$el = $('#pendings-table tbody').append('<tr><td>'+data.item.name+'</td><td>'+data.item.id+'</td><td>'+data.item.data+'</td><td>'+data.item.damage+'</td><td>'+data.item.count+'</td><td><a href="#" class="details">details</a></td></tr>');
+				$el.data('name', data.item.name);
+				$el.data('data', data.item.data);
+				$el.data('damage', data.item.damage);
+				$el.data('count', data.item.count);
+				$el.data('id', data.item.id);
+			}
+		});
+	});
+	/** Initial loading of item names **/
+	$.getJSON('./api.php',{'p': 'items'}, function(data){
+		$('.select-items').empty();
+		$.each(data.items, function(index, value) {
+			$('.select-items').append('<option value="'+index+'">'+value+'</option>');
+		});
+	});
+	$('#add-item').change(function(e){
+		$('#add-item-showid').text($(this).val());
+	});
+	/** Reload functions **/
 	$('#reload-inventory').click(function(event){
 		event.preventDefault();
 		$(this).children('i').addClass('ani rotate');
@@ -56,7 +84,14 @@ function load_inv()
 	$.getJSON('./api.php',{'p': 'inv','u': current_userid,'w': 'world'}, function(data){
 		$.each(data.inv, function(index, value) {
 			$el = $('#inventory-table .slot-'+value.slot);
-			$el.addClass('clickable').text(value.item);
+			itm = '<span class="mc-';
+			if(value.item >= 256) {
+				itm += 'item';
+			} else {
+				itm += 'block';
+			}
+			itm += '"><span class="id-'+value.item+'">&nbsp;</span></span>'
+			$el.addClass('clickable').html(itm);
 			$el.data('slotid', value.slot); //trick to not have to type every data attribute in html..
 			$el.data('name', value.item_name);
 			$el.data('data', value.data);

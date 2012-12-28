@@ -13,8 +13,8 @@
 {
 	position: relative;
 	background-color: #8B8B8B;
-	height: 50px;
-	width: 50px;
+	height: 25px;
+	width: 25px;
 	border-bottom: solid 2px #FFFFFF;
 	border-right: solid 2px #FFFFFF;
 	border-left: solid 2px #373737;
@@ -40,4 +40,23 @@
 	-moz-transform:rotate(360deg);
 	-webkit-transform:rotate(360deg);
 	-o-transform:rotate(360deg);
+}
+
+#pendings-table tr:nth-child(1) {
+	width: 25%;
+}
+#pendings-table tr:nth-child(2) {
+	width: 10%;
+}
+#pendings-table tr:nth-child(3) {
+	width: 15%;
+}
+#pendings-table tr:nth-child(4) {
+	width: 15%;
+}
+#pendings-table tr:nth-child(5) {
+	width: 10%;
+}
+#pendings-table tr:nth-child(6) {
+	width: 25%;
 }

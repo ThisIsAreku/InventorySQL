@@ -21,6 +21,7 @@
     </style>
     <link href="./css/bootstrap-responsive.min.css" rel="stylesheet">
     <link href="./css/site.css" rel="stylesheet">
+    <link href="./css/mcpictures.css" rel="stylesheet">
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
@@ -52,8 +53,8 @@
 				  <li class="web"><a class="disabled">Web: <span>...</span></a></li>
 			  <li class="divider"></li>
 			  <li class="nav-header">Contact</li>
-				  <li><a href="http://pro.areku.fr/">ThisIsAreku</a></li>
-				  <li><a href="http://dev.bukkit.org/server-mods/inventorysql/">InventorySQL on Bukkit</a></li>
+				  <li><a href="http://pro.areku.fr/" target="_blank">ThisIsAreku</a></li>
+				  <li><a href="http://dev.bukkit.org/server-mods/inventorysql/" target="_blank">InventorySQL on Bukkit</a></li>
 			</ul>
           <div class="nav-collapse collapse">
             <p class="navbar-text pull-right">
@@ -148,14 +149,15 @@
 					<tr><th>count</th><td class="count">0</td></tr>
 				</table>
 				<div class="input-append">
-				  <input class="input-medium" id="slot-addmore" type="number">
-				  <button class="btn" type="button" data-loading-text="Loading...">Add to pendings &raquo;</button>
+				  <input class="input-medium" id="slot-addmore-count" type="number">
+				  <button class="btn" type="button" id="slot-addmore-give" data-loading-text="Loading...">Add to pendings &raquo;</button>
 				</div>
             </div><!--/span-->
           </div><!--/row-->
           <div class="row-fluid">
             <div class="span8">
               <h2>Pendings <a href="#" id="reload-pendings"><i class="icon icon-refresh">&nbsp;</i></a></h2>
+				<form class="form-inline">
 				<table class="table" id="pendings-table">
 				<thead>
 					<tr>
@@ -169,7 +171,23 @@
 				</thead>
 				<tbody>
 				</tbody>
+				<tfoot>
+					<tr>
+						<td><select class="select-items" id="add-item"></select></td>
+						<td id="add-item-showid"></td>
+						<td><input id="add-data" type="number" value="0"></td>
+						<td><input id="add-damage" type="number" value="0"></td>
+						<td><input id="add-count" type="number" value="1"></td>
+						<td><button type="submit" class="btn btn-primary">Add &raquo;</button></td>
+					</tr>
+				</tfoot>
 				</table>
+				</form>
+				  
+				  
+				  
+				  
+				  
             </div><!--/span-->
             <div class="span4 fade">
               <h2>Details</h2>
