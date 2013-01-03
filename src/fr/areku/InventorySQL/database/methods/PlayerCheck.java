@@ -86,14 +86,14 @@ public class PlayerCheck extends SQLMethod {
 						&& (p.getGameMode() == GameMode.CREATIVE)) {
 					return;
 				}
-				String pName = p.getName();
+				String pName = p.getPlayerListName();
 
 				PreparedStatement sth = getConn().prepareStatement(
 						"SELECT `id` FROM `" + Config.dbTable_Users
-								+ "` WHERE `name` = ?");
+								+ "` WHERE UPPER(`name`) = UPPER(?);");
 				sth.setString(1, pName);
 				ResultSet rs = sth.executeQuery();
-				Integer userID = -1;
+				int userID = -1;
 				if (rs.first()) {
 					userID = rs.getInt(1);
 				} else {
@@ -247,8 +247,7 @@ public class PlayerCheck extends SQLMethod {
 					InventorySQL.d(this.hashCode()
 							+ " => checkPlayers:InventoryModified");
 
-					players_to_remove_sb.append(userID.toString() + ",")
-							.toString();
+					players_to_remove_sb.append(userID + ",");
 
 					// update standart slots
 					for (Integer invSlotID = 0; invSlotID < 36; invSlotID++) {
@@ -481,7 +480,7 @@ public class PlayerCheck extends SQLMethod {
 					q_meta += ", ('" + invSlotID + "', 'DisplayName', ?, 1)";
 				}
 
-				//InventorySQL.d(q_meta);
+				// InventorySQL.d(q_meta);
 
 				PreparedStatement prep = conn.prepareStatement(q_meta);
 				prep.setString(1, invMeta.getDisplayName());
@@ -501,7 +500,7 @@ public class PlayerCheck extends SQLMethod {
 						}
 					}
 					q_meta = q_meta.substring(0, q_meta.length() - 1);
-					//InventorySQL.d(q_meta);
+					// InventorySQL.d(q_meta);
 
 					PreparedStatement prep = conn.prepareStatement(q_meta);
 					int i = 0;
@@ -509,11 +508,11 @@ public class PlayerCheck extends SQLMethod {
 					for (String l : invMeta.getLore()) {
 						if (Config.backup_enabled) {
 							n = 4;
-							prep.setString(i*n + 3, "Lore_" + (i+1));
-							prep.setString(i*n + 4, l);
+							prep.setString(i * n + 3, "Lore_" + (i + 1));
+							prep.setString(i * n + 4, l);
 						}
-						prep.setString(i*n + 1, "Lore_" + (i+1));
-						prep.setString(i*n + 2, l);
+						prep.setString(i * n + 1, "Lore_" + (i + 1));
+						prep.setString(i * n + 2, l);
 						i++;
 					}
 					InventorySQL.d(prep.toString());
