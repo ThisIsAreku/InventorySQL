@@ -21,6 +21,7 @@ $(function(){
 		load_inv();
 		load_pend();
 		$('#user-data').addClass('in');
+		$('#slot-detail').parent().removeClass('in');
 	});
 	$('#inventory-table').on("click", "td.clickable", function(event){
 		$('#slot-detail').parent().addClass('in');
@@ -50,6 +51,24 @@ $(function(){
 			}
 		});
 	});
+	$('#pending-give').submit(function(e){
+		e.preventDefault();
+		item = $('.add-item', this).val();
+		data = $('.add-data', this).val();
+		damage = $('.add-damage', this).val();
+		count = $('.add-count', this).val();
+		$.getJSON('./api.php',{'p': 'give','u': current_userid,'w': 'world', 'item': item, 'data': data, 'damage': damage, 'count': count}, function(data){
+			if(data.success)
+			{
+				$el = $('#pendings-table tbody').append('<tr><td>'+data.item.name+'</td><td>'+data.item.id+'</td><td>'+data.item.data+'</td><td>'+data.item.damage+'</td><td>'+data.item.count+'</td><td><a href="#" class="details">details</a></td></tr>');
+				$el.data('name', data.item.name);
+				$el.data('data', data.item.data);
+				$el.data('damage', data.item.damage);
+				$el.data('count', data.item.count);
+				$el.data('id', data.item.id);
+			}
+		});
+	});
 	/** Initial loading of item names **/
 	$.getJSON('./api.php',{'p': 'items'}, function(data){
 		$('.select-items').empty();
@@ -57,8 +76,8 @@ $(function(){
 			$('.select-items').append('<option value="'+index+'">'+value+'</option>');
 		});
 	});
-	$('#add-item').change(function(e){
-		$('#add-item-showid').text($(this).val());
+	$('#pending-give .add-item').change(function(e){
+		$('#pending-give .add-item-showid').text($(this).val());
 	});
 	/** Reload functions **/
 	$('#reload-inventory').click(function(event){

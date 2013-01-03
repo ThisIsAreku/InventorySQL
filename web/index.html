@@ -157,7 +157,7 @@
           <div class="row-fluid">
             <div class="span8">
               <h2>Pendings <a href="#" id="reload-pendings"><i class="icon icon-refresh">&nbsp;</i></a></h2>
-				<form class="form-inline">
+				<form class="form-inline" id="pending-give" method="get" action="">
 				<table class="table" id="pendings-table">
 				<thead>
 					<tr>
@@ -173,12 +173,12 @@
 				</tbody>
 				<tfoot>
 					<tr>
-						<td><select class="select-items" id="add-item"></select></td>
-						<td id="add-item-showid"></td>
-						<td><input id="add-data" type="number" value="0"></td>
-						<td><input id="add-damage" type="number" value="0"></td>
-						<td><input id="add-count" type="number" value="1"></td>
-						<td><button type="submit" class="btn btn-primary">Add &raquo;</button></td>
+						<td><select class="select-items add-item input-medium"></select></td>
+						<td class="add-item-showid"></td>
+						<td><input class="add-data input-small" type="number" value="0"></td>
+						<td><input class="add-damage input-small" type="number" value="0"></td>
+						<td><input class="add-count input-small" type="number" value="1"></td>
+						<td><button type="submit" class="btn btn-primary input-medium">Add &raquo;</button></td>
 					</tr>
 				</tfoot>
 				</table>
