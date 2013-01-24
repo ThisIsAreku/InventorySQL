@@ -16,14 +16,12 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.EventExecutor;
 
 import fr.areku.Authenticator.events.PlayerOfflineModeLogin;
+import fr.areku.InventorySQL.database.CoreSQL;
 
 public class UpdateEventListener implements Listener {
-	private InventorySQL plugin;
 
-	public UpdateEventListener(InventorySQL pl) {
+	public UpdateEventListener() {
 		try {
-			this.plugin = pl;
-
 			if (Config.update_events.contains("join")) {
 				InventorySQL.d("Registering PlayerJoinEvent");
 				registerThis(PlayerJoinEvent.class, new EventExecutor() {
@@ -105,7 +103,7 @@ public class UpdateEventListener implements Listener {
 	private void registerThis(Class<? extends Event> eventClass,
 			EventExecutor exec) {
 		Bukkit.getPluginManager().registerEvent(eventClass, this,
-				EventPriority.NORMAL, exec, this.plugin, true);
+				EventPriority.NORMAL, exec, InventorySQL.getInstance(), true);
 	}
 
 	public void registerOfflineModeSupport() {
@@ -131,7 +129,7 @@ public class UpdateEventListener implements Listener {
 		if (InventorySQL.isUsingAuthenticator())
 			return;
 		InventorySQL.d("onPlayerJoin(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+		CoreSQL.getInstance().runPlayerCheck(event.getPlayer(),
 				"PlayerJoin", event.getPlayer());
 	}
 
@@ -142,7 +140,7 @@ public class UpdateEventListener implements Listener {
 				return;
 		}
 		InventorySQL.d("onPlayerQuit(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+		CoreSQL.getInstance().runPlayerCheck(event.getPlayer(),
 				"PlayerJoin", event.getPlayer(), false, 0);
 	}
 
@@ -153,7 +151,7 @@ public class UpdateEventListener implements Listener {
 				return;
 		}
 		InventorySQL.d("onPlayerChangedWorld(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+		CoreSQL.getInstance().runPlayerCheck(event.getPlayer(),
 				"PlayerChangedWorld", event.getPlayer(), false, 0);
 	}
 
@@ -164,7 +162,7 @@ public class UpdateEventListener implements Listener {
 				return;
 		}
 		InventorySQL.d("onPlayerRespawn(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+		CoreSQL.getInstance().runPlayerCheck(event.getPlayer(),
 				"PlayerRespawn", event.getPlayer());
 	}
 
@@ -175,26 +173,26 @@ public class UpdateEventListener implements Listener {
 				return;
 		}
 		InventorySQL.d("onPlayerDeath(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getEntity(),
+		CoreSQL.getInstance().runPlayerCheck(event.getEntity(),
 				"PlayerRespawn", event.getEntity(), false, 0);
 	}
 
 	public void doPlayerBedEnter(PlayerBedEnterEvent event) {
 		InventorySQL.d("onPlayerBedEnter(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+		CoreSQL.getInstance().runPlayerCheck(event.getPlayer(),
 				"PlayerBedEnter", event.getPlayer());
 	}
 
 	public void doPlayerBedLeave(PlayerBedLeaveEvent event) {
 		InventorySQL.d("onPlayerBedLeave(" + event.toString() + ")");
-		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+		CoreSQL.getInstance().runPlayerCheck(event.getPlayer(),
 				"PlayerBedLeave", event.getPlayer());
 	}
 
 	public void doPlayerOfflineModeLogin(PlayerOfflineModeLogin event) {
 		InventorySQL.d("onPlayerOfflineModeLogin("
 				+ event.getPlayer().toString() + ")");
-		InventorySQL.getCoreSQLProcess().runPlayerCheck(event.getPlayer(),
+		CoreSQL.getInstance().runPlayerCheck(event.getPlayer(),
 				"PlayerOfflineModeLogin", event.getPlayer());
 	}
 

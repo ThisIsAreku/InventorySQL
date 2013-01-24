@@ -9,10 +9,9 @@ public abstract class SQLMethod implements Runnable {
 	private CommandSender cs = null;
 	private String initiator = null;
 	private JDCConnection conn = null;
-	private CoreSQLProcess parent;
 	private Object target;
-
-	public abstract void doAction(Object target, String initiator, CommandSender cs);
+	
+	public abstract void doAction(Object target, String initiator, CommandSender cs); 
 
 	public long getCurrentCheckEpoch() {
 		return CURRENT_CHECK_EPOCH;
@@ -23,9 +22,6 @@ public abstract class SQLMethod implements Runnable {
 	public String getInitiator() {
 		return initiator;
 	}
-	public CoreSQLProcess getCoreSQL() {
-		return parent;
-	}
 
 	public void sendMessage(String msg) {
 		if (cs != null) {
@@ -33,8 +29,7 @@ public abstract class SQLMethod implements Runnable {
 		}
 	}
 
-	public SQLMethod(CoreSQLProcess parent, String initiator, CommandSender cs) {
-		this.parent = parent;
+	public SQLMethod(String initiator, CommandSender cs) {
 		this.cs = cs;
 		this.initiator = initiator;
 	}
@@ -48,20 +43,19 @@ public abstract class SQLMethod implements Runnable {
 	public void run() {
 		CURRENT_CHECK_EPOCH = System.currentTimeMillis() / 1000L;
 		try {
-			if (!this.parent.isDatabaseReady()) {
+			if (!CoreSQL.getInstance().isDatabaseReady()) {
 				conn = null;
 				InventorySQL.d("Database isn't ready");
 				return;
 			}
 			if (conn == null) {
-				conn = this.parent.getConnection();
-			} else {
-				if (!conn.isValid())
-					conn = this.parent.getConnection();
+				conn = CoreSQL.getInstance().getConnection();
+			} else if (!conn.isValid()){
+					conn = CoreSQL.getInstance().getConnection();
 			}
 			doAction(target, initiator, cs); // real action is here
 		} catch (Exception ex) {
-			if (parent.isDatabaseReady()) {
+			if (CoreSQL.getInstance().isDatabaseReady()) {
 				InventorySQL.logException(ex,
 						"exception in playerlogic - check all");
 			}

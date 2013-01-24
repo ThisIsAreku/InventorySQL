@@ -17,6 +17,7 @@ import fr.areku.InventorySQL.InventorySQLCommand;
 import fr.areku.InventorySQL.InventorySQLCommandListener;
 import fr.areku.InventorySQL.PlayerManager;
 import fr.areku.InventorySQL.database.ConnectionManager;
+import fr.areku.InventorySQL.database.CoreSQL;
 
 public class Commandinvsql extends InventorySQLCommand {
 
@@ -38,7 +39,7 @@ public class Commandinvsql extends InventorySQLCommand {
 				return true;
 			}
 			sendMessage(cs, ChatColor.YELLOW + "Reloading InventorySQL");
-			getParent().plugin.reload();
+			InventorySQL.getInstance().reload();
 			return true;
 		}
 
@@ -75,7 +76,7 @@ public class Commandinvsql extends InventorySQLCommand {
 				sendHelp(cs);
 				return true;
 			}
-			if (InventorySQL.getCoreSQLProcess().updatePlayerPassword(
+			if (CoreSQL.getInstance().updatePlayerPassword(
 					cs.getName(), combine(args, " "))) {
 				sendMessage(cs, ChatColor.BLUE + "Password changed");
 			} else {
@@ -96,7 +97,7 @@ public class Commandinvsql extends InventorySQLCommand {
 							ChatColor.GREEN
 									+ InventorySQL
 											.getMessage("check-all-players"));
-					InventorySQL.getCoreSQLProcess().runPlayerCheck("Command",
+					CoreSQL.getInstance().runPlayerCheck("Command",
 							null, true, 0);
 					return true;
 				}
@@ -111,7 +112,7 @@ public class Commandinvsql extends InventorySQLCommand {
 					}
 				}
 				if (nP.size() > 0) {
-					InventorySQL.getCoreSQLProcess().runPlayerCheck(
+					CoreSQL.getInstance().runPlayerCheck(
 							nP.toArray(new Player[] {}), "Command", null);
 					sendMessage(
 							cs,
@@ -139,7 +140,7 @@ public class Commandinvsql extends InventorySQLCommand {
 						cs,
 						ChatColor.GREEN
 								+ InventorySQL.getMessage("check-yourself"));
-				InventorySQL.getCoreSQLProcess().runPlayerCheck((Player) cs,
+				CoreSQL.getInstance().runPlayerCheck((Player) cs,
 						"Command", cs);
 			}
 		}
@@ -152,7 +153,7 @@ public class Commandinvsql extends InventorySQLCommand {
 					return true;
 				}
 				sendMessage(cs, ChatColor.GREEN + "Cleaning backup..");
-				InventorySQL.getCoreSQLProcess().runBackupClean();
+				CoreSQL.getInstance().runBackupClean();
 			}
 
 		}

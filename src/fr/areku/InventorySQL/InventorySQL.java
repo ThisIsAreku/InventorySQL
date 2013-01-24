@@ -4,23 +4,24 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.SQLException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import fr.areku.InventorySQL.database.CoreSQLProcess;
+import fr.areku.InventorySQL.database.CoreSQL;
 import fr.areku.commons.UpdateChecker;
 
 public class InventorySQL extends JavaPlugin {
 	private static InventorySQL instance;
-
-	private CoreSQLProcess coreSQLProcess;
-	// private PlayerManager playerManager;
 
 	private UpdateEventListener playerListener;
 	private InventorySQLCommandListener commandListener;
@@ -89,7 +90,7 @@ public class InventorySQL extends JavaPlugin {
 	public void onDisable() {
 		ready = false;
 		try {
-			getCoreSQLProcess().onDisable();
+			CoreSQL.getInstance().onDisable();
 			PlayerManager.getInstance().saveDatas();
 		} catch (Exception e) {
 			logException(e, "Error while disabling..");
@@ -106,17 +107,17 @@ public class InventorySQL extends JavaPlugin {
 
 		try {
 			log("Loading config...");
-			new Config(this);
+			Config.reloadConfig();
 		} catch (Exception e) {
 			logException(e, "Unable to load config");
 			this.Disable();
 			return;
 		}
 		new PlayerManager(new File(getDataFolder(), "players.txt"));
-		this.coreSQLProcess = new CoreSQLProcess(this);
-		this.playerListener = new UpdateEventListener(this);
-		this.commandListener = new InventorySQLCommandListener(this);
 
+		new UpdateEventListener();
+		
+		this.commandListener = new InventorySQLCommandListener();
 		this.getCommand("invSQL").setExecutor(commandListener);
 		this.getCommand("ichk").setExecutor(commandListener);
 
@@ -130,7 +131,7 @@ public class InventorySQL extends JavaPlugin {
 		linkVault();
 	}
 
-	public void linkOfflineMode() {
+	private void linkOfflineMode() {
 		Plugin p = Bukkit.getServer().getPluginManager()
 				.getPlugin("Authenticator");
 		if (p != null) {
@@ -146,7 +147,7 @@ public class InventorySQL extends JavaPlugin {
 		}
 	}
 
-	public void linkVault() {
+	private void linkVault() {
 		if (getServer().getPluginManager().getPlugin("Vault") == null) {
 			return;
 		}
@@ -161,7 +162,7 @@ public class InventorySQL extends JavaPlugin {
 			InventorySQL.log("You have Vault ? oh great, so I'll use it");
 	}
 
-	public void startMetrics() {
+	private void startMetrics() {
 
 		try {
 			log("Starting Metrics");
@@ -172,7 +173,7 @@ public class InventorySQL extends JavaPlugin {
 		}
 	}
 
-	public void startUpdate() {
+	private void startUpdate() {
 		try {
 			UpdateChecker update = new UpdateChecker(this);
 			update.start();
@@ -187,7 +188,7 @@ public class InventorySQL extends JavaPlugin {
 
 	public void reload() {
 		try {
-			new Config(this);
+			Config.reloadConfig();
 		} catch (Exception e) {
 			logException(e, "Unable to load config");
 			this.Disable();
@@ -195,7 +196,7 @@ public class InventorySQL extends JavaPlugin {
 		}
 
 		try {
-			getCoreSQLProcess().reload();
+			CoreSQL.getInstance().reload();
 		} catch (ClassNotFoundException e) {
 			log(Level.SEVERE, "Cannot found MySQL Class !");
 			this.Disable();
@@ -211,14 +212,34 @@ public class InventorySQL extends JavaPlugin {
 		return instance.vaultPlugin;
 	}
 
-	/*
-	 * public static PlayerManager getPlayerManager() { return
-	 * instance.playerManager; }
-	 */
-
-	public static CoreSQLProcess getCoreSQLProcess() {
-		return instance.coreSQLProcess;
+	public Player[] getOnlinePlayersSync() throws InterruptedException,
+			ExecutionException {
+		return callSyncMethod(new Callable<Player[]>() {
+			@Override
+			public Player[] call() throws Exception {
+				return Bukkit.getOnlinePlayers();
+			}
+		}).get();
 	}
+
+	public Player getPlayerSync(final String p) throws InterruptedException,
+			ExecutionException {
+		return callSyncMethod(new Callable<Player>() {
+			@Override
+			public Player call() throws Exception {
+				return Bukkit.getPlayer(p);
+			}
+		}).get();
+	}
+
+	public <T> Future<T> callSyncMethod(Callable<T> methode) {
+		return Bukkit.getScheduler().callSyncMethod(this, methode);
+	}
+	
+	public static InventorySQL getInstance(){
+		return instance;
+	}
+	
 
 	public static boolean isUsingAuthenticator() {
 		return instance.offlineModePlugin;

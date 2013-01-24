@@ -8,9 +8,22 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.bukkit.CoalType;
+import org.bukkit.DyeColor;
+import org.bukkit.SandstoneType;
+import org.bukkit.TreeSpecies;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.material.Coal;
+import org.bukkit.material.Dye;
+import org.bukkit.material.MaterialData;
+import org.bukkit.material.Sandstone;
+import org.bukkit.material.SpawnEgg;
+import org.bukkit.material.Tree;
+import org.bukkit.material.WoodenStep;
+import org.bukkit.material.Wool;
 
 import fr.areku.InventorySQL.Config;
 import fr.areku.InventorySQL.InventorySQL;
@@ -59,9 +72,13 @@ public class SQLItemStack {
 		theID = id;
 		theSlotID = slotId;
 		int count = rs.getInt("count");
-		theItemStack = new ItemStack(rs.getInt("item"), Math.abs(count),
-				(short) rs.getInt("damage"));
-		theItemStack.getData().setData(rs.getByte("data"));
+		theItemStack = new ItemStack(rs.getInt("item"), Math.abs(count));
+		applyMaterialData(rs.getByte("data"));
+		InventorySQL.d("Sooo : " + theItemStack.getData().getData());
+		theItemStack.setDurability((short) rs.getInt("damage"));
+		if(((short) rs.getInt("damage") == 0) && (rs.getByte("data") != 0)){
+			theItemStack.setDurability(rs.getByte("data"));
+		}
 		readEnch(rs);
 		readMeta(rs);
 
@@ -70,6 +87,44 @@ public class SQLItemStack {
 		} else if (count < 0) {
 			theAction = Action.REMOVE;
 		}
+	}
+
+	private void applyMaterialData(byte data) {
+		MaterialData d = theItemStack.getData();
+		d.setData(data);
+		switch (theItemStack.getType()) {
+		case MONSTER_EGG:
+			InventorySQL.d("SETTING TYPE !");
+			InventorySQL.d(EntityType.fromId(data).toString());
+			((SpawnEgg) d).setSpawnedType(EntityType.fromId(data));
+			theItemStack.setDurability(data); // hack
+			break;
+		case INK_SACK:
+			((Dye) d).setColor(DyeColor.getByDyeData(data));
+			break;
+		case WOOD:
+		case SAPLING:
+		case LOG:
+		case LEAVES:
+			((Tree) d).setSpecies(TreeSpecies.getByData(data));
+			break;
+		case WOOD_DOUBLE_STEP:
+		case WOOD_STEP:
+			((WoodenStep) d).setSpecies(TreeSpecies.getByData(data));
+			break;
+		case SANDSTONE:
+			((Sandstone) d).setType(SandstoneType.getByData(data));
+			break;
+		case COAL:
+			((Coal) d).setType(CoalType.getByData(data));
+			break;
+		case WOOL:
+			((Wool) d).setColor(DyeColor.getByDyeData(data));
+			break;
+		default:
+			d.setData(data);
+		}
+		theItemStack.setData(d);
 	}
 
 	public void readMeta(ResultSet rs) throws SQLException {
@@ -85,9 +140,11 @@ public class SQLItemStack {
 				Matcher match = LorePattern.matcher(meta_key);
 				if (match.matches()) {
 					int l = Integer.parseInt(match.group(1));
-					lores.put(l, meta_value); //use the TreeMap to sort Lores lines
+					lores.put(l, meta_value); // use the TreeMap to sort Lores
+												// lines
 					// complexe way to avoid ClassCastException
-					meta.setLore(Arrays.asList(lores.values().toArray(new String[]{})));
+					meta.setLore(Arrays.asList(lores.values().toArray(
+							new String[] {})));
 				}
 			}
 			theItemStack.setItemMeta(meta);
@@ -116,9 +173,9 @@ public class SQLItemStack {
 
 	@Override
 	public String toString() {
-		return "SQLItemStack [theItemStack=" + theItemStack + ", theID="
-				+ theID + ", theAction=" + theAction + ", theSlotID="
-				+ theSlotID + "]";
+		return "SQLItemStack [theItemStack=" + theItemStack.toString()
+				+ ", theID=" + theID + ", theAction=" + theAction
+				+ ", theSlotID=" + theSlotID + "]";
 	}
 
 }

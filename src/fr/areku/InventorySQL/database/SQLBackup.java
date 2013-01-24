@@ -17,7 +17,7 @@ public class SQLBackup implements Runnable {
 		SHOW_BACKUP, RESTORE, CLEAN, NONE
 	}
 
-	private CoreSQLProcess parent;
+	private CoreSQL parent;
 	private JDCConnection conn = null;
 	private long ITERATION = 0;
 	private final long SEC_BETWEEN_CLEANUP = (Config.backup_cleanup_days * 86400) / 2;
@@ -26,7 +26,7 @@ public class SQLBackup implements Runnable {
 	private String player = "";
 	private CommandSender cs = null;
 
-	public SQLBackup(CoreSQLProcess parent) {
+	public SQLBackup(CoreSQL parent) {
 		InventorySQL.d("New SQLBackup !");
 		this.parent = parent;
 	}

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.logging.Level;
+
+import org.bukkit.GameMode;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.MemorySection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -33,7 +35,7 @@ public class Config {
 
 	public static boolean check_plugin_updates = true;
 	public static boolean checkChest = false;
-	public static boolean noCreative = true;
+	public static List<GameMode> gamemode = new ArrayList<GameMode>();
 	public static boolean multiworld = true;
 	public static boolean mirrorMode = false;
 	public static int afterLoginDelay = 20;
@@ -50,56 +52,77 @@ public class Config {
 
 	public static boolean debug = false;
 
-	public Config(InventorySQL plugin) throws IOException,
-			InvalidConfigurationException {
+	public static void reloadConfig() throws IOException, InvalidConfigurationException {
 		reload_count++;
-		File file = new File(plugin.getDataFolder(), "config.yml");
-		if (!plugin.getDataFolder().exists())
-			plugin.getDataFolder().mkdirs();
-		if (!file.exists())
-			copy(plugin.getResource("config.yml"), file);
 
-		plugin.getConfig().load(file);
+		File file = new File(InventorySQL.getInstance().getDataFolder(),
+				"config.yml");
+		if (!InventorySQL.getInstance().getDataFolder().exists())
+			InventorySQL.getInstance().getDataFolder().mkdirs();
+		if (!file.exists())
+			copy(InventorySQL.getInstance().getResource("config.yml"), file);
+
+		InventorySQL.getInstance().getConfig().load(file);
 
 		YamlConfiguration defaults = new YamlConfiguration();
-		defaults.load(plugin.getResource("config.yml"));
-		plugin.getConfig().addDefaults(defaults);
-		plugin.getConfig().options().copyDefaults(true);
+		defaults.load(InventorySQL.getInstance().getResource("config.yml"));
+		InventorySQL.getInstance().getConfig().addDefaults(defaults);
+		InventorySQL.getInstance().getConfig().options().copyDefaults(true);
 
-		Config.dbHost = plugin.getConfig().getString("mysql.host");
-		Config.dbUser = plugin.getConfig().getString("mysql.user");
-		Config.dbPass = plugin.getConfig().getString("mysql.pass");
-		Config.dbDatabase = plugin.getConfig().getString("mysql.db");
-		Config.dbTablePrefix = plugin.getConfig().getString(
-				"mysql.table-prefix");
-		Config.dbPoolSize = plugin.getConfig().getInt("mysql.pool-size");
+		Config.dbHost = InventorySQL.getInstance().getConfig()
+				.getString("mysql.host");
+		Config.dbUser = InventorySQL.getInstance().getConfig()
+				.getString("mysql.user");
+		Config.dbPass = InventorySQL.getInstance().getConfig()
+				.getString("mysql.pass");
+		Config.dbDatabase = InventorySQL.getInstance().getConfig()
+				.getString("mysql.db");
+		Config.dbTablePrefix = InventorySQL.getInstance().getConfig()
+				.getString("mysql.table-prefix");
+		Config.dbPoolSize = InventorySQL.getInstance().getConfig()
+				.getInt("mysql.pool-size");
 		if (Config.dbPoolSize < 1) {
 			InventorySQL.log(Level.WARNING, "MySQL Pool size is too low (<1)");
 			Config.dbPoolSize = 3;
 		}
 
-		Config.check_interval = plugin.getConfig().getInt("check-interval");
-		Config.check_plugin_updates = plugin.getConfig().getBoolean(
-				"check-plugin-updates");
-		Config.noCreative = plugin.getConfig().getBoolean("no-creative");
-		Config.afterLoginDelay = plugin.getConfig().getInt("after-login-delay");
-		Config.multiworld = plugin.getConfig().getBoolean("multiworld");
-		Config.mirrorMode = plugin.getConfig().getBoolean("mirror-mode");
-		Config.usePermissions = plugin.getConfig()
+		Config.check_interval = InventorySQL.getInstance().getConfig()
+				.getInt("check-interval");
+		Config.check_plugin_updates = InventorySQL.getInstance().getConfig()
+				.getBoolean("check-plugin-updates");
+		@SuppressWarnings("unchecked")
+		List<String> gm = (List<String>) InventorySQL.getInstance()
+				.getConfig().getList("gamemode");
+		if(gm != null){
+			for(String g : gm){
+				try{
+				Config.gamemode.add(GameMode.valueOf(g));
+				}catch(Exception e){}
+			}
+		}
+		Config.afterLoginDelay = InventorySQL.getInstance().getConfig()
+				.getInt("after-login-delay");
+		Config.multiworld = InventorySQL.getInstance().getConfig()
+				.getBoolean("multiworld");
+		Config.mirrorMode = InventorySQL.getInstance().getConfig()
+				.getBoolean("mirror-mode");
+		Config.usePermissions = InventorySQL.getInstance().getConfig()
 				.getBoolean("use-permissions");
 
-		Config.backup_enabled = plugin.getConfig().getBoolean("backup.enabled");
-		Config.backup_cleanup_days = plugin.getConfig().getInt(
-				"backup.cleanup-days");
+		Config.backup_enabled = InventorySQL.getInstance().getConfig()
+				.getBoolean("backup.enabled");
+		Config.backup_cleanup_days = InventorySQL.getInstance().getConfig()
+				.getInt("backup.cleanup-days");
 
-		Config.allow_unsafe_ench = plugin.getConfig().getBoolean(
-				"allow-unsafe-ench");
+		Config.allow_unsafe_ench = InventorySQL.getInstance().getConfig()
+				.getBoolean("allow-unsafe-ench");
 
-		Config.debug = plugin.getConfig().getBoolean("debug");
+		Config.debug = InventorySQL.getInstance().getConfig()
+				.getBoolean("debug");
 
 		Config.update_events = new ArrayList<String>();
-		MemorySection events = (MemorySection) plugin.getConfig().get(
-				"update-events");
+		MemorySection events = (MemorySection) InventorySQL.getInstance()
+				.getConfig().get("update-events");
 		for (String k : events.getKeys(false)) {
 			if (events.getBoolean(k))
 				Config.update_events.add(k);
@@ -135,9 +158,10 @@ public class Config {
 			InventorySQL.log("-------------------------------");
 		}
 
-		plugin.getConfig().save(file);
+		InventorySQL.getInstance().getConfig().save(file);
 
-		File suid = new File(plugin.getDataFolder(), "suid.txt");
+		File suid = new File(InventorySQL.getInstance().getDataFolder(),
+				"suid.txt");
 		if (!suid.exists()) {
 			Config.serverUID = UUID.randomUUID().toString();
 			BufferedWriter out = new BufferedWriter(new FileWriter(
@@ -156,7 +180,7 @@ public class Config {
 		}
 	}
 
-	private void copy(InputStream src, File dst) throws IOException {
+	private static void copy(InputStream src, File dst) throws IOException {
 		OutputStream out = new FileOutputStream(dst);
 
 		// Transfer bytes from in to out

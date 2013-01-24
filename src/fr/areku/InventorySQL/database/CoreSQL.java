@@ -1,9 +1,6 @@
 package fr.areku.InventorySQL.database;
 
 import java.sql.SQLException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
@@ -18,25 +15,35 @@ import fr.areku.InventorySQL.database.methods.PlayerCheck;
  * 
  * @author Alexandre
  */
-public class CoreSQLProcess implements Runnable {
+public class CoreSQL implements SQLUpdaterResult{
+	private static CoreSQL instance = null;
+	public static CoreSQL getInstance() {
+		if(instance == null)
+			instance = new CoreSQL();
+		return instance;
+	}
 
-	private InventorySQL plugin;
 	public ConnectionManager connectionManager = null;
 	private boolean databaseReady = false;
 
-	public CoreSQLProcess(InventorySQL plugin) {
-		this.plugin = plugin;
+	public CoreSQL() {
 	}
 
 	public void reload() throws ClassNotFoundException {
 		InventorySQL.log(Level.INFO, "Reloading SQL process");
+		initialize();
+	}
+
+	public void initialize() throws ClassNotFoundException {
 		this.databaseReady = false;
 		if (this.connectionManager != null)
 			this.connectionManager.close();
 		this.connectionManager = new ConnectionManager("jdbc:mysql://"
 				+ Config.dbHost + "/" + Config.dbDatabase, Config.dbUser,
 				Config.dbPass);
-		Bukkit.getScheduler().runTaskAsynchronously(plugin, this);
+
+		SQLUpdater updater = new SQLUpdater(this);
+		updater.checkUpdateTable();
 	}
 
 	/**
@@ -48,62 +55,35 @@ public class CoreSQLProcess implements Runnable {
 
 	private void disable() {
 		this.databaseReady = false;
-		Bukkit.getScheduler().cancelTasks(plugin);
+		Bukkit.getScheduler().cancelTasks(InventorySQL.getInstance());
 		if (this.connectionManager != null)
 			this.connectionManager.close();
 		this.connectionManager = null;
 	}
 
-	/**
-	 * Runnable task; check the connection and update the tables
-	 */
-	@Override
-	public void run() {
-		SQLUpdater updater = new SQLUpdater(plugin, this.connectionManager);
-
-		if (updater.checkUpdateTable()) {
-			Bukkit.getScheduler().cancelTasks(plugin);
-			if (Config.check_interval > 0) {
-				InventorySQL.d("Init Check at interval "
-						+ Config.check_interval);
-				Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,
-						new PlayerCheck(this, "Scheduler", null),
-						Config.check_interval, Config.check_interval);
-			}
-
-			if (Config.backup_enabled)
-				Bukkit.getScheduler().runTaskTimerAsynchronously(plugin,
-						new SQLBackup(this).clean(), Config.check_interval,
-						Config.check_interval * 2);
-
-			this.databaseReady = true;
-			InventorySQL.log("InventorySQL is ready ! :)");
-		} else {
-			InventorySQL.log(Level.WARNING,
-					"Check your config and use /invsql reload");
-			disable();
-		}
-	}
-
 	private void runTask(Runnable task, int delay) {
 		if (this.databaseReady)
-			Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, task,
-					delay);
+			Bukkit.getScheduler().runTaskLaterAsynchronously(
+					InventorySQL.getInstance(), task, delay);
 	}
 
 	public void runPlayerCheck(String initiator, CommandSender cs,
 			boolean doGive, int delay) {
-		runTask(new PlayerCheck(this, initiator, cs).setDoGive(doGive), delay);
+		runTask(new PlayerCheck(initiator, cs).setDoGive(doGive), delay);
 	}
+
 	public void runPlayerCheck(Player p, String initiator, CommandSender cs,
 			boolean doGive, int delay) {
-		runTask(new PlayerCheck(this, initiator, cs).setDoGive(doGive).setTarget(p), delay);
+		runTask(new PlayerCheck(initiator, cs).setDoGive(doGive).setTarget(p),
+				delay);
 	}
+
 	public void runPlayerCheck(Player p, String initiator, CommandSender cs) {
-		runTask(new PlayerCheck(this, initiator, cs).setTarget(p), 0);
+		runTask(new PlayerCheck(initiator, cs).setTarget(p), 0);
 	}
+
 	public void runPlayerCheck(Player[] p, String initiator, CommandSender cs) {
-		runTask(new PlayerCheck(this, initiator, cs).setTarget(p), 0);
+		runTask(new PlayerCheck(initiator, cs).setTarget(p), 0);
 	}
 
 	public void runBackupClean() {
@@ -135,30 +115,6 @@ public class CoreSQLProcess implements Runnable {
 		return this.databaseReady;
 	}
 
-	public Player[] getOnlinePlayers() throws InterruptedException,
-			ExecutionException {
-		return callSyncMethod(new Callable<Player[]>() {
-			@Override
-			public Player[] call() throws Exception {
-				return Bukkit.getOnlinePlayers();
-			}
-		}).get();
-	}
-
-	public Player getPlayer(final String p) throws InterruptedException,
-			ExecutionException {
-		return callSyncMethod(new Callable<Player>() {
-			@Override
-			public Player call() throws Exception {
-				return Bukkit.getPlayer(p);
-			}
-		}).get();
-	}
-
-	public <T> Future<T> callSyncMethod(Callable<T> methode) {
-		return Bukkit.getScheduler().callSyncMethod(plugin, methode);
-	}
-
 	public synchronized JDCConnection getConnection() {
 		try {
 			return this.connectionManager.getConnection();
@@ -166,6 +122,34 @@ public class CoreSQLProcess implements Runnable {
 			InventorySQL.logException(e, "Cannot get a new connection");
 		}
 		return null;
+	}
+
+	@Override
+	public void updateResult(boolean success) {
+		if (success) {
+			Bukkit.getScheduler().cancelTasks(InventorySQL.getInstance());
+			if (Config.check_interval > 0) {
+				InventorySQL.d("Init Check at interval "
+						+ Config.check_interval);
+				Bukkit.getScheduler().runTaskTimerAsynchronously(
+						InventorySQL.getInstance(),
+						new PlayerCheck("Scheduler", null),
+						Config.check_interval, Config.check_interval);
+			}
+
+			if (Config.backup_enabled)
+				Bukkit.getScheduler().runTaskTimerAsynchronously(
+						InventorySQL.getInstance(),
+						new SQLBackup(this).clean(), Config.check_interval,
+						Config.check_interval * 2);
+
+			this.databaseReady = true;
+			InventorySQL.log("InventorySQL is ready ! :)");
+		} else {
+			InventorySQL.log(Level.WARNING,
+					"Check your config and use /invsql reload");
+			disable();
+		}
 	}
 
 }

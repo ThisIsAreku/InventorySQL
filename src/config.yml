@@ -1,11 +1,14 @@
 # InventorySQL config - by ThisIsAreku - http://dev.bukkit.org/server-mods/inventorysql/
 check-interval: 600
 check-plugin-updates: true
-no-creative: true
 multiworld: true
 allow-unsafe-ench: false
 mirror-mode: false
 use-permissions: false
+gamemode:
+  - SURVIVAL
+  - CREATIVE
+  - ADVENTURE
 mysql:
   host: localhost:3306
   user: root

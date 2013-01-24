@@ -12,8 +12,6 @@ import fr.areku.InventorySQL.EmptyException;
 import fr.areku.InventorySQL.InventorySQL;
 
 public class SQLUpdater {
-	private ConnectionManager connectionManager = null;
-	private InventorySQL plugin = null;
 	private static final HashMap<String, String> tableFirstRow = new HashMap<String, String>();
 	static {
 		tableFirstRow.put("_inventories",
@@ -28,14 +26,15 @@ public class SQLUpdater {
 				"int(11) NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`)");
 	}
 
-	public SQLUpdater(InventorySQL plugin, ConnectionManager connectionManager) {
-		this.plugin = plugin;
-		this.connectionManager = connectionManager;
+	private SQLUpdaterResult handler = null;
+	public SQLUpdater(SQLUpdaterResult handler) {
+		this.handler = handler;
+		
 	}
 
-	public boolean checkUpdateTable() {
+	public void checkUpdateTable() {
 		try {
-			JDCConnection conn = this.connectionManager.getConnection();
+			JDCConnection conn = CoreSQL.getInstance().getConnection();
 			check_table_version("_inventories", conn);
 			check_table_version("_backups", conn);
 			check_table_version("_pendings", conn);
@@ -46,7 +45,8 @@ public class SQLUpdater {
 			 * if (Config.backup_enabled) check_table_version("_backup", conn);
 			 */
 			conn.close();
-			return true;
+			handler.updateResult(true);
+			return;
 		} catch (SQLException ex) {
 			InventorySQL
 					.log(Level.SEVERE, "Cannot connect to mySQL database !");
@@ -55,7 +55,7 @@ public class SQLUpdater {
 		} catch (Exception ex) {
 			InventorySQL.logException(ex, "table need update?");
 		}
-		return false;
+		handler.updateResult(false);
 	}
 
 	private void check_table_version(String selector, JDCConnection conn)
@@ -88,7 +88,7 @@ public class SQLUpdater {
 				comment = comment
 						.substring(p + 9, comment.indexOf('\'', p + 9));
 
-				if (!("table format : " + plugin.getDescription().getVersion())
+				if (!("table format : " + InventorySQL.getVersion())
 						.equals(comment)) {
 					update_table_fields(selector, conn);
 				}
@@ -101,7 +101,7 @@ public class SQLUpdater {
 			throws SQLException {
 		InventorySQL.log("Table '" + Config.dbTablePrefix + selector
 				+ "' need update");
-		String query = read(plugin
+		String query = read(InventorySQL.getInstance()
 				.getResource("fr/areku/InventorySQL/schemas/schema" + selector
 						+ ".sql"));
 		query = query.replace("%%TABLENAME%%", Config.dbTablePrefix + selector);
@@ -114,7 +114,7 @@ public class SQLUpdater {
 		}
 		query = "ALTER IGNORE TABLE `%%TABLENAME%%` COMMENT = 'table format : %%VERSION%%'"
 				.replace("%%TABLENAME%%", Config.dbTablePrefix + selector)
-				.replace("%%VERSION%%", plugin.getDescription().getVersion());
+				.replace("%%VERSION%%", InventorySQL.getVersion());
 		try {
 			conn.createStatement().executeUpdate(query);
 		} catch (SQLException e) {

@@ -9,15 +9,11 @@ import fr.areku.InventorySQL.command.Commandichk;
 import fr.areku.InventorySQL.command.Commandinvsql;
 
 public class InventorySQLCommandListener implements CommandExecutor {
-	public InventorySQL plugin;
-
-	public InventorySQLCommandListener(InventorySQL plugin) {
-		this.plugin = plugin;
-	}
+	public InventorySQLCommandListener() {}
 
 	public boolean onCommand(CommandSender cs, Command cmnd, String label,
 			String[] args) {
-		if (!this.plugin.ready) {
+		if (!InventorySQL.getInstance().ready) {
 			cs.sendMessage("[InventorySQL] " + ChatColor.RED
 					+ "Error in config, please check and use /invsql reload");
 			return true;

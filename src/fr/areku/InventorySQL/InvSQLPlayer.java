@@ -3,17 +3,17 @@ package fr.areku.InventorySQL;
 public class InvSQLPlayer {
 	// private Player thePlayer;
 	private String thePlayerName;
+	private Integer theSqlId;
 	private String theHash;
 	private Long theEpoch;
 	private boolean firstSessionCheck;
 
 	public InvSQLPlayer(String playerName) {
-		thePlayerName = playerName;
-		theHash = "";
-		theEpoch = 0L;
+		this(playerName, "", 0L);
 	}
 
 	public InvSQLPlayer(String playerName, String hash, long epoch) {
+		theSqlId = -1;
 		thePlayerName = playerName;
 		theHash = hash;
 		theEpoch = epoch;
@@ -24,6 +24,13 @@ public class InvSQLPlayer {
 	 * public Player getPlayer() { return thePlayer; }
 	 */
 
+	public Integer getSqlId() {
+		return theSqlId;
+	}
+
+	public void setSqlId(Integer id) {
+		theSqlId = id;
+	}
 	public String getPlayerName() {
 		return thePlayerName;
 	}
