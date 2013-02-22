@@ -15,10 +15,11 @@ import fr.areku.InventorySQL.database.methods.PlayerCheck;
  * 
  * @author Alexandre
  */
-public class CoreSQL implements SQLUpdaterResult{
+public class CoreSQL implements SQLUpdaterResult {
 	private static CoreSQL instance = null;
+
 	public static CoreSQL getInstance() {
-		if(instance == null)
+		if (instance == null)
 			instance = new CoreSQL();
 		return instance;
 	}
@@ -41,9 +42,10 @@ public class CoreSQL implements SQLUpdaterResult{
 		this.connectionManager = new ConnectionManager("jdbc:mysql://"
 				+ Config.dbHost + "/" + Config.dbDatabase, Config.dbUser,
 				Config.dbPass);
-
-		SQLUpdater updater = new SQLUpdater(this);
-		updater.checkUpdateTable();
+		if (this.connectionManager.isReady()) {
+			SQLUpdater updater = new SQLUpdater(this);
+			updater.checkUpdateTable();
+		}
 	}
 
 	/**
@@ -112,7 +114,7 @@ public class CoreSQL implements SQLUpdaterResult{
 	}
 
 	public synchronized boolean isDatabaseReady() {
-		return this.databaseReady;
+		return this.databaseReady && this.connectionManager.isReady();
 	}
 
 	public synchronized JDCConnection getConnection() {

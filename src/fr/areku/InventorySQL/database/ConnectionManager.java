@@ -6,15 +6,16 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import fr.areku.InventorySQL.InventorySQL;
 import fr.areku.InventorySQL.Config;
 
-public class ConnectionManager implements Closeable{
+public class ConnectionManager implements Closeable {
 	private static ConnectionManager instance;
 
 	private boolean ready = false;
-	//private static int poolsize = 3;
+	// private static int poolsize = 3;
 	private static long timeToLive = 300000;
 	private static List<JDCConnection> connections;
 	private final ConnectionReaper reaper;
@@ -35,16 +36,23 @@ public class ConnectionManager implements Closeable{
 		reaper = new ConnectionReaper();
 		reaper.start();
 		instance = this;
+		try {
+			getConnection();
+		} catch (SQLException sql) {
+			InventorySQL.log(Level.SEVERE, sql.getLocalizedMessage());
+			ready = false;
+		}
 	}
-	public boolean isReady(){
+
+	public boolean isReady() {
 		return ready;
 	}
 
 	public static ConnectionManager getInstance() {
 		return instance;
 	}
-	
-	public static int getNumConn(){
+
+	public static int getNumConn() {
 		return connections.size();
 	}
 
@@ -55,27 +63,35 @@ public class ConnectionManager implements Closeable{
 	 * @throws SQLException
 	 */
 	public synchronized JDCConnection getConnection() throws SQLException {
-		if(!ready) return null;
-		JDCConnection conn;
-		for (int i = 0; i < connections.size(); i++) {
-			conn = connections.get(i);
-			if (conn.lease()) {
-				if (conn.isValid())
-					return conn;
-				InventorySQL.d("Removing dead MySQL connection");
-				connections.remove(conn);
-				conn.terminate();
+		if (!ready)
+			return null;
+		JDCConnection conn = null;
+		try {
+			for (int i = 0; i < connections.size(); i++) {
+				conn = connections.get(i);
+				if (conn.lease()) {
+					if (conn.isValid())
+						return conn;
+					InventorySQL.d("Removing dead MySQL connection");
+					connections.remove(conn);
+					conn.terminate();
+				}
 			}
+			InventorySQL
+					.d("No available MySQL connections, attempting to create new one");
+			conn = new JDCConnection(DriverManager.getConnection(url, user,
+					password));
+			conn.lease();
+			if (!conn.isValid()) {
+				conn.terminate();
+				throw new SQLException("Could not create new connection");
+			}
+			connections.add(conn);
+		} catch (SQLException sql) {
+			ready = false;
+			throw new SQLException(sql);
+
 		}
-		InventorySQL.d("No available MySQL connections, attempting to create new one");
-		conn = new JDCConnection(DriverManager.getConnection(url, user,
-				password));
-		conn.lease();
-		if (!conn.isValid()) {
-			conn.terminate();
-			throw new SQLException("Could not create new connection");
-		}
-		connections.add(conn);
 		return conn;
 	}
 
@@ -92,8 +108,9 @@ public class ConnectionManager implements Closeable{
 	 * Loops through connections, reaping old ones
 	 */
 	private synchronized void reapConnections() {
-		if(!ready) return;
-		
+		if (!ready)
+			return;
+
 		InventorySQL.d("Attempting to reap dead connections");
 		final long stale = System.currentTimeMillis() - timeToLive;
 		int count = 0;
@@ -133,11 +150,11 @@ public class ConnectionManager implements Closeable{
 	}
 
 	public void close() {
-			ready = false;
-			InventorySQL.d("Closing all MySQL connections");
-			for (JDCConnection conn : connections) {
-				conn.terminate();
-			}
-			connections.clear();
+		ready = false;
+		InventorySQL.d("Closing all MySQL connections");
+		for (JDCConnection conn : connections) {
+			conn.terminate();
+		}
+		connections.clear();
 	}
 }

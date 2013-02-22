@@ -1,6 +1,7 @@
 package fr.areku.InventorySQL.database;
 
 import java.io.InputStream;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -27,9 +28,10 @@ public class SQLUpdater {
 	}
 
 	private SQLUpdaterResult handler = null;
+
 	public SQLUpdater(SQLUpdaterResult handler) {
 		this.handler = handler;
-		
+
 	}
 
 	public void checkUpdateTable() {
@@ -60,50 +62,50 @@ public class SQLUpdater {
 
 	private void check_table_version(String selector, JDCConnection conn)
 			throws SQLException, EmptyException {
-		if (!JDBCUtil.tableExistsCaseSensitive(conn.getMetaData(),
-				Config.dbTablePrefix + selector)) {
-			InventorySQL.log("Creating '" + Config.dbTablePrefix + selector
-					+ "' table...");
-			String create = "CREATE TABLE IF NOT EXISTS `"
-					+ Config.dbTablePrefix + selector + "` (`id` "
-					+ tableFirstRow.get(selector)
-					+ ") ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
-			if (conn.createStatement().executeUpdate(create) != 0) {
-				InventorySQL.log(Level.SEVERE, "Cannot create table '"
-						+ Config.dbTablePrefix + selector
-						+ "', check your config !");
-			} else {
-				update_table_fields(selector, conn);
-			}
-		} else {
-			ResultSet rs = conn.createStatement().executeQuery(
-					"SHOW CREATE TABLE `" + Config.dbTablePrefix + selector
-							+ "`");
-			rs.first();
-			String comment = rs.getString(2);
-			int p = comment.indexOf("COMMENT='");
-			if (p == -1) {
-				update_table_fields(selector, conn);
-			} else {
-				comment = comment
-						.substring(p + 9, comment.indexOf('\'', p + 9));
-
-				if (!("table format : " + InventorySQL.getVersion())
-						.equals(comment)) {
+			DatabaseMetaData md = conn.getMetaData();
+			if (!JDBCUtil.tableExistsCaseSensitive(md, Config.dbTablePrefix
+					+ selector)) {
+				InventorySQL.log("Creating '" + Config.dbTablePrefix + selector
+						+ "' table...");
+				String create = "CREATE TABLE IF NOT EXISTS `"
+						+ Config.dbTablePrefix + selector + "` (`id` "
+						+ tableFirstRow.get(selector)
+						+ ") ENGINE=MyISAM  DEFAULT CHARSET=utf8;";
+				if (conn.createStatement().executeUpdate(create) != 0) {
+					InventorySQL.log(Level.SEVERE, "Cannot create table '"
+							+ Config.dbTablePrefix + selector
+							+ "', check your config !");
+				} else {
 					update_table_fields(selector, conn);
 				}
+			} else {
+				ResultSet rs = conn.createStatement().executeQuery(
+						"SHOW CREATE TABLE `" + Config.dbTablePrefix + selector
+								+ "`");
+				rs.first();
+				String comment = rs.getString(2);
+				int p = comment.indexOf("COMMENT='");
+				if (p == -1) {
+					update_table_fields(selector, conn);
+				} else {
+					comment = comment.substring(p + 9,
+							comment.indexOf('\'', p + 9));
+
+					if (!("table format : " + InventorySQL.getVersion())
+							.equals(comment)) {
+						update_table_fields(selector, conn);
+					}
+				}
+				rs.close();
 			}
-			rs.close();
-		}
 	}
 
 	private void update_table_fields(String selector, JDCConnection conn)
 			throws SQLException {
 		InventorySQL.log("Table '" + Config.dbTablePrefix + selector
 				+ "' need update");
-		String query = read(InventorySQL.getInstance()
-				.getResource("fr/areku/InventorySQL/schemas/schema" + selector
-						+ ".sql"));
+		String query = read(InventorySQL.getInstance().getResource(
+				"fr/areku/InventorySQL/schemas/schema" + selector + ".sql"));
 		query = query.replace("%%TABLENAME%%", Config.dbTablePrefix + selector);
 		for (String r : query.split(";")) {
 			try {

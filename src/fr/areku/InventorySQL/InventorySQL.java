@@ -23,7 +23,6 @@ import fr.areku.commons.UpdateChecker;
 public class InventorySQL extends JavaPlugin {
 	private static InventorySQL instance;
 
-	private UpdateEventListener playerListener;
 	private InventorySQLCommandListener commandListener;
 
 	private Permission perm = null;
@@ -116,7 +115,7 @@ public class InventorySQL extends JavaPlugin {
 		new PlayerManager(new File(getDataFolder(), "players.txt"));
 
 		new UpdateEventListener();
-		
+
 		this.commandListener = new InventorySQLCommandListener();
 		this.getCommand("invSQL").setExecutor(commandListener);
 		this.getCommand("ichk").setExecutor(commandListener);
@@ -140,7 +139,7 @@ public class InventorySQL extends JavaPlugin {
 				fr.areku.Authenticator.Authenticator.setDebug(Config.debug,
 						this);
 
-				this.playerListener.registerOfflineModeSupport();
+				UpdateEventListener.registerOfflineModeSupport();
 				InventorySQL
 						.log("Using Authenticator for offline-mode support");
 			}
@@ -178,7 +177,9 @@ public class InventorySQL extends JavaPlugin {
 			UpdateChecker update = new UpdateChecker(this);
 			update.start();
 		} catch (MalformedURLException e) {
-			log("Cannot start Plugin Updater...");
+			d("Cannot start Plugin Updater...");
+			d(e.getMessage());
+			// log("Cannot start Plugin Updater...");
 		}
 	}
 
@@ -235,11 +236,10 @@ public class InventorySQL extends JavaPlugin {
 	public <T> Future<T> callSyncMethod(Callable<T> methode) {
 		return Bukkit.getScheduler().callSyncMethod(this, methode);
 	}
-	
-	public static InventorySQL getInstance(){
+
+	public static InventorySQL getInstance() {
 		return instance;
 	}
-	
 
 	public static boolean isUsingAuthenticator() {
 		return instance.offlineModePlugin;

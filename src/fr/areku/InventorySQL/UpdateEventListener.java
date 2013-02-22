@@ -19,8 +19,10 @@ import fr.areku.Authenticator.events.PlayerOfflineModeLogin;
 import fr.areku.InventorySQL.database.CoreSQL;
 
 public class UpdateEventListener implements Listener {
-
+	private static UpdateEventListener instance = null;
+	
 	public UpdateEventListener() {
+		instance = this;
 		try {
 			if (Config.update_events.contains("join")) {
 				InventorySQL.d("Registering PlayerJoinEvent");
@@ -106,14 +108,14 @@ public class UpdateEventListener implements Listener {
 				EventPriority.NORMAL, exec, InventorySQL.getInstance(), true);
 	}
 
-	public void registerOfflineModeSupport() {
+	public static void registerOfflineModeSupport() {
 		if (!InventorySQL.isUsingAuthenticator())
 			return;
 
-		registerThis(PlayerOfflineModeLogin.class, new EventExecutor() {
+		instance.registerThis(PlayerOfflineModeLogin.class, new EventExecutor() {
 			public void execute(Listener listener, Event event)
 					throws EventException {
-				doPlayerOfflineModeLogin((PlayerOfflineModeLogin) event);
+				instance.doPlayerOfflineModeLogin((PlayerOfflineModeLogin) event);
 			}
 		});
 	}

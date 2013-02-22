@@ -72,7 +72,7 @@ public class PlayerCheck extends SQLMethod {
 
 		for (Player p : targetPlayers) {
 			InventorySQL.d(this.hashCode() + " => checkPlayers:" + p.getName());
-			String pName = p.getPlayerListName();
+			String pName = p.getName();
 
 			try {
 				if (InventorySQL.isUsingAuthenticator()) {
@@ -143,12 +143,12 @@ public class PlayerCheck extends SQLMethod {
 							+ Config.dbTable_Enchantments
 							+ "` AS `enchantments` ON `pendings`.`id` = `enchantments`.`id`";
 					if (Config.backup_enabled)
-						q += " AND `enchantments`.`is_backup` = 0";
+						q += " AND `enchantments`.`is_backup` != 1";
 
 					q += " LEFT JOIN `" + Config.dbTable_Meta
 							+ "` AS `meta` ON `pendings`.`id` = `meta`.`id`";
 					if (Config.backup_enabled)
-						q += " AND `meta`.`is_backup` = 0";
+						q += " AND `meta`.`is_backup` != 1";
 
 					q += " WHERE (`pendings`.`owner` = ?";
 					if (Config.multiworld)
@@ -291,12 +291,12 @@ public class PlayerCheck extends SQLMethod {
 					+ Config.dbTable_Enchantments
 					+ "` AS `enchantments` ON `inventories`.`id` = `enchantments`.`id`";
 			if (Config.backup_enabled)
-				q += " AND `enchantments`.`is_backup` = 0";
+				q += " AND `enchantments`.`is_backup` != 1";
 
 			q += " LEFT JOIN `" + Config.dbTable_Meta
 					+ "` AS `meta` ON `inventories`.`id` = `meta`.`id`";
 			if (Config.backup_enabled)
-				q += " AND `meta`.`is_backup` = 0";
+				q += " AND `meta`.`is_backup` != 1";
 
 			q += " WHERE (`inventories`.`owner` IN (" + final_players_id
 					+ "0) AND `inventories`.`date` != ?";
@@ -342,7 +342,7 @@ public class PlayerCheck extends SQLMethod {
 			q += " AND `inventories`.`world` = ?";
 
 		if (Config.backup_enabled)
-			q += " AND `enchantments`.`is_backup` = 0 AND `meta`.`is_backup` = 0";
+			q += " AND `enchantments`.`is_backup` != 1 AND `meta`.`is_backup` != 1";
 
 		q += ");";
 		PreparedStatement sth = getConn().prepareStatement(q);
@@ -396,7 +396,7 @@ public class PlayerCheck extends SQLMethod {
 			r = false;
 		} else {
 			InventorySQL.d(this.hashCode()
-					+ " => Mirroring:LocalMoreRecentOrNoSQL");
+					+ " => Mirroring:LocalMoreRecentOrNoSQLDATA");
 			/*
 			 * if (!invModified) { updateSQLTime(userID, p); }
 			 */
@@ -453,22 +453,26 @@ public class PlayerCheck extends SQLMethod {
 								Config.dbTable_Backups)).executeUpdate();
 			}
 		}
-		
+
 		/* ench */
 		if (this.updatesql_ench.length() > 0) {
-			this.updatesql_ench = "INSERT INTO `" + Config.dbTable_Enchantments
-					+ "`(`id`, `ench_index`, `ench`, `level`, `is_backup`) VALUES " + this.updatesql_ench.substring(0,
-					this.updatesql_ench.length() - 1);
-			
+			this.updatesql_ench = "INSERT INTO `"
+					+ Config.dbTable_Enchantments
+					+ "`(`id`, `ench_index`, `ench`, `level`, `is_backup`) VALUES "
+					+ this.updatesql_ench.substring(0,
+							this.updatesql_ench.length() - 1);
+
 			conn.prepareStatement(this.updatesql_ench).executeUpdate();
 		}
-		
+
 		/* meta */
 		if (this.updatesql_meta.length() > 0) {
-			this.updatesql_meta = "INSERT INTO `" + Config.dbTable_Meta
-					+ "`(`id`, `key`, `value`, `is_backup`) VALUES " + this.updatesql_meta.substring(0,
-					this.updatesql_meta.length() - 1);
-			
+			this.updatesql_meta = "INSERT INTO `"
+					+ Config.dbTable_Meta
+					+ "`(`id`, `key`, `value`, `is_backup`) VALUES "
+					+ this.updatesql_meta.substring(0,
+							this.updatesql_meta.length() - 1);
+
 			conn.prepareStatement(this.updatesql_meta).executeUpdate();
 		}
 	}

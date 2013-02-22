@@ -5,6 +5,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/Authenticator"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="/lib/1.4/Vault.jar"/>
-	<classpathentry kind="lib" path="/lib/1.4/craftbukkit/craftbukkit-1.4.7-R0.2-20130124.100921-10.jar"/>
+	<classpathentry kind="lib" path="/lib/1.4/craftbukkit/craftbukkit-1.4.7-R1.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
