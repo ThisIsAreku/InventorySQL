@@ -10,22 +10,28 @@ public abstract class SQLMethod implements Runnable {
 	private String initiator = null;
 	private JDCConnection conn = null;
 	private Object target;
-	
-	public abstract void doAction(Object target, String initiator, CommandSender cs); 
+
+	public abstract void doAction(Object target, String initiator,
+			CommandSender cs);
 
 	public long getCurrentCheckEpoch() {
 		return CURRENT_CHECK_EPOCH;
-	}	
+	}
+
 	public JDCConnection getConn() {
 		return conn;
 	}
+
 	public String getInitiator() {
 		return initiator;
 	}
 
 	public void sendMessage(String msg) {
 		if (cs != null) {
-			cs.sendMessage(msg);
+			if (!cs.hasPermission("invsql.hidemessages")){
+				InventorySQL.d("to " + cs.getName() + " : " + msg);
+				cs.sendMessage(msg);
+			}
 		}
 	}
 
@@ -33,8 +39,8 @@ public abstract class SQLMethod implements Runnable {
 		this.cs = cs;
 		this.initiator = initiator;
 	}
-	
-	public SQLMethod setTarget(Object target){
+
+	public SQLMethod setTarget(Object target) {
 		this.target = target;
 		return this;
 	}
@@ -50,8 +56,8 @@ public abstract class SQLMethod implements Runnable {
 			}
 			if (conn == null) {
 				conn = CoreSQL.getInstance().getConnection();
-			} else if (!conn.isValid()){
-					conn = CoreSQL.getInstance().getConnection();
+			} else if (!conn.isValid()) {
+				conn = CoreSQL.getInstance().getConnection();
 			}
 			doAction(target, initiator, cs); // real action is here
 		} catch (Exception ex) {

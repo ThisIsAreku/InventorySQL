@@ -15,10 +15,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.EventException;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.EventExecutor;
 
-public class PlayerManager {
+public class PlayerManager implements Listener {
 	private static PlayerManager instance;
 	private Map<String, InvSQLPlayer> playerMap = null;
 	private File f;
@@ -29,6 +38,24 @@ public class PlayerManager {
 		if (f.exists()) {
 			loadDatas();
 		}
+
+		EventExecutor handler = new EventExecutor() {
+			public void execute(Listener listener, Event event)
+					throws EventException {
+				String pName = ((PlayerEvent) event).getPlayer().getName();
+				if (playerMap.containsKey(pName)) {
+					InventorySQL.d("PlayerManager::handle::" + pName);
+					playerMap.get(pName).resetCheckState();
+				}
+			}
+		};
+		Bukkit.getPluginManager().registerEvent(PlayerQuitEvent.class, this,
+				EventPriority.MONITOR, handler, InventorySQL.getInstance(),
+				true);
+		Bukkit.getPluginManager().registerEvent(PlayerJoinEvent.class, this,
+				EventPriority.MONITOR, handler, InventorySQL.getInstance(),
+				true);
+
 		instance = this;
 	}
 
@@ -91,6 +118,10 @@ public class PlayerManager {
 		return playerMap.get(name);
 	}
 
+	public InvSQLPlayer[] getAll() {
+		return playerMap.values().toArray(new InvSQLPlayer[0]);
+	}
+
 	/*
 	 * public void onPlayerLogin(Player p){ if
 	 * (!playerMap.containsKey(p.getName())) { InvSQLPlayer pl = new
@@ -120,6 +151,10 @@ public class PlayerManager {
 				serialized.append(e.getKey() + " => " + e.getValue());
 		}
 		serialized.append(InventorySQL.getVersion());
+		serialized.append(Config.serverUID); // two different servers will
+												// generate different hash
+		InventorySQL.d("Computing MD5...");
+		String hex = "-";
 		try {
 			MessageDigest digest = MessageDigest.getInstance("MD5");
 			digest.update(serialized.toString().getBytes("UTF-8"));
@@ -130,11 +165,11 @@ public class PlayerManager {
 				sb.append(HEX_CHARS[(b & 0xF0) >> 4]);
 				sb.append(HEX_CHARS[b & 0x0F]);
 			}
-			String hex = sb.toString();
-			return hex;
+			hex = sb.toString();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return "";
+		InventorySQL.d("Done");
+		return hex;
 	}
 }

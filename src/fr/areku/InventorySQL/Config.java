@@ -1,12 +1,16 @@
 package fr.areku.InventorySQL;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.MemorySection;
@@ -52,7 +56,8 @@ public class Config {
 
 	public static boolean debug = false;
 
-	public static void reloadConfig() throws IOException, InvalidConfigurationException {
+	public static void reloadConfig() throws IOException,
+			InvalidConfigurationException {
 		reload_count++;
 
 		File file = new File(InventorySQL.getInstance().getDataFolder(),
@@ -91,13 +96,14 @@ public class Config {
 		Config.check_plugin_updates = InventorySQL.getInstance().getConfig()
 				.getBoolean("check-plugin-updates");
 		@SuppressWarnings("unchecked")
-		List<String> gm = (List<String>) InventorySQL.getInstance()
-				.getConfig().getList("gamemode");
-		if(gm != null){
-			for(String g : gm){
-				try{
-				Config.gamemode.add(GameMode.valueOf(g));
-				}catch(Exception e){}
+		List<String> gm = (List<String>) InventorySQL.getInstance().getConfig()
+				.getList("gamemode");
+		if (gm != null) {
+			for (String g : gm) {
+				try {
+					Config.gamemode.add(GameMode.valueOf(g));
+				} catch (Exception e) {
+				}
 			}
 		}
 		Config.afterLoginDelay = InventorySQL.getInstance().getConfig()
@@ -160,20 +166,31 @@ public class Config {
 
 		InventorySQL.getInstance().getConfig().save(file);
 
-		File suid = new File(InventorySQL.getInstance().getDataFolder(),
-				"suid.txt");
-		if (!suid.exists()) {
+		if (Bukkit.getServerId().equals("unnamed")) {
+			InventorySQL.log("-------------------------------");
+			InventorySQL.log("server-id is not defined !");
+			InventorySQL
+					.log("You have to change the value of server-name in server.properties");
+			InventorySQL.log("A random name will be used");
+			InventorySQL.log("-------------------------------");
 			Config.serverUID = UUID.randomUUID().toString();
-			BufferedWriter out = new BufferedWriter(new FileWriter(
-					suid.toString()));
-			out.write(Config.serverUID);
-			out.flush();
-			out.close();
+			/*File suid = new File(InventorySQL.getInstance().getDataFolder(),
+					"suid.txt");
+			if (!suid.exists()) {
+				Config.serverUID = UUID.randomUUID().toString();
+				BufferedWriter out = new BufferedWriter(new FileWriter(
+						suid.toString()));
+				out.write(Config.serverUID);
+				out.flush();
+				out.close();
+			} else {
+				Scanner scan = new Scanner(suid);
+				scan.useDelimiter("\\Z");
+				Config.serverUID = scan.next().replace('\r', ' ')
+						.replace('\n', ' ').replace('\t', ' ').trim();
+			}*/
 		} else {
-			Scanner scan = new Scanner(suid);
-			scan.useDelimiter("\\Z");
-			Config.serverUID = scan.next().replace('\r', ' ')
-					.replace('\n', ' ').replace('\t', ' ').trim();
+			Config.serverUID = Bukkit.getServerId();
 		}
 		if (reload_count > 0) {
 			InventorySQL.log("Server UID is : " + Config.serverUID);

@@ -143,7 +143,7 @@ public class UpdateEventListener implements Listener {
 		}
 		InventorySQL.d("onPlayerQuit(" + event.toString() + ")");
 		CoreSQL.getInstance().runPlayerCheck(event.getPlayer(),
-				"PlayerJoin", event.getPlayer(), false, 0);
+				"PlayerQuit", event.getPlayer(), false, 0);
 	}
 
 	public void doPlayerChangedWorld(PlayerChangedWorldEvent event) {

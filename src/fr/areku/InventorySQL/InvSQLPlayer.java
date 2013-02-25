@@ -31,6 +31,7 @@ public class InvSQLPlayer {
 	public void setSqlId(Integer id) {
 		theSqlId = id;
 	}
+
 	public String getPlayerName() {
 		return thePlayerName;
 	}
@@ -71,8 +72,11 @@ public class InvSQLPlayer {
 	}
 
 	public boolean isFirstSessionCheck() {
-		InventorySQL.d("isFirstSessionCheck:" + firstSessionCheck);
 		return firstSessionCheck;
+	}
+
+	public void resetCheckState() {
+		firstSessionCheck = true;
 	}
 
 }

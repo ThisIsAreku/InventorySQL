@@ -2,7 +2,7 @@ name: InventorySQL
 main: fr.areku.InventorySQL.InventorySQL
 author: ThisIsAreku
 website: http://areku.fr/
-version: 2.5.3
+version: 2.5.4
 description: Sync your inventory on MySQL
 softdepend: [Authenticator, Vault]
 commands:
@@ -43,3 +43,6 @@ permissions:
   invsql.debug:
     description: 'Access to /invsql debug'
     default: op
+  invsql.hidemessages:
+    description: 'Hide messages from InventorySQL'
+    default: false

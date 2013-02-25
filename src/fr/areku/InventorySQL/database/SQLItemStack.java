@@ -10,12 +10,18 @@ import java.util.regex.Pattern;
 
 import org.bukkit.CoalType;
 import org.bukkit.DyeColor;
+import org.bukkit.FireworkEffect;
+import org.bukkit.FireworkEffect.Builder;
+import org.bukkit.Material;
 import org.bukkit.SandstoneType;
 import org.bukkit.TreeSpecies;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.MapMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.material.Coal;
 import org.bukkit.material.Dye;
 import org.bukkit.material.MaterialData;
@@ -38,7 +44,9 @@ public class SQLItemStack {
 	private Action theAction;
 	private int theSlotID;
 	private static Pattern LorePattern = Pattern.compile("Lore_(\\d)");
+
 	private TreeMap<Integer, String> lores = new TreeMap<Integer, String>();
+	private Builder fwBuilder = FireworkEffect.builder();
 
 	public ItemStack getItemStack() {
 		return theItemStack;
@@ -76,7 +84,7 @@ public class SQLItemStack {
 		applyMaterialData(rs.getByte("data"));
 		InventorySQL.d("Sooo : " + theItemStack.getData().getData());
 		theItemStack.setDurability((short) rs.getInt("damage"));
-		if(((short) rs.getInt("damage") == 0) && (rs.getByte("data") != 0)){
+		if (((short) rs.getInt("damage") == 0) && (rs.getByte("data") != 0)) {
 			theItemStack.setDurability(rs.getByte("data"));
 		}
 		readEnch(rs);
@@ -130,25 +138,59 @@ public class SQLItemStack {
 	public void readMeta(ResultSet rs) throws SQLException {
 		String meta_key = rs.getString("meta_key");
 		InventorySQL.d("Readed a meta : " + meta_key);
-		if (!rs.wasNull()) {
-			ItemMeta meta = theItemStack.getItemMeta();
-			String meta_value = rs.getString("meta_value");
-			InventorySQL.d("Readed a meta val : " + meta_value);
-			if ("DisplayName".equals(meta_key)) {
-				meta.setDisplayName(meta_value);
-			} else {
-				Matcher match = LorePattern.matcher(meta_key);
-				if (match.matches()) {
-					int l = Integer.parseInt(match.group(1));
-					lores.put(l, meta_value); // use the TreeMap to sort Lores
-												// lines
-					// complexe way to avoid ClassCastException
-					meta.setLore(Arrays.asList(lores.values().toArray(
-							new String[] {})));
-				}
-			}
-			theItemStack.setItemMeta(meta);
+		if (rs.wasNull()){
+			InventorySQL.d("empty meta key");
+			return;
 		}
+		ItemMeta meta = theItemStack.getItemMeta();
+		String meta_value = rs.getString("meta_value");
+		InventorySQL.d("Readed a meta val : " + meta_value);
+		if (rs.wasNull()){
+			InventorySQL.d("empty meta val");
+			return;
+		}
+		if ("DisplayName".equals(meta_key)) {
+			meta.setDisplayName(meta_value);
+		} else {
+			Matcher match = LorePattern.matcher(meta_key);
+			if (match.matches()) {
+				int l = Integer.parseInt(match.group(1));
+				lores.put(l, meta_value); // use the TreeMap to sort Lores
+											// lines
+				// complexe way to avoid ClassCastException
+				meta.setLore(Arrays.asList(lores.values().toArray(
+						new String[] {})));
+			}
+		}
+
+		/* handling meta for special items */
+		switch (theItemStack.getType()) {
+		case SKULL_ITEM:
+			if ("Owner".equals(meta_key)) {
+				((SkullMeta) meta).setOwner(meta_value);
+			}
+			break;
+		case MAP:
+			if ("Scaling".equals(meta_key)) {
+				((MapMeta) meta)
+						.setScaling("true".equalsIgnoreCase(meta_value));
+			}
+			break;
+		case FIREWORK_CHARGE:
+			if ("Flicker".equals(meta_key)) {
+				fwBuilder.flicker("true".equalsIgnoreCase(meta_value));
+			} else if ("Trail".equals(meta_key)) {
+				fwBuilder.trail("true".equalsIgnoreCase(meta_value));
+			} else if ("Trail".equals(meta_key)) {
+				// fwBuilder.
+			} else
+				break;
+		default:
+			break;
+
+		}
+		theItemStack.setItemMeta(meta);
+
 	}
 
 	public void readEnch(ResultSet rs) throws SQLException {
@@ -159,7 +201,13 @@ public class SQLItemStack {
 			int ench_level = rs.getInt("level");
 			if ((e != null) && ench_level > 0) {
 				try {
-					m.addEnchant(e, ench_level, Config.allow_unsafe_ench);
+					if (theItemStack.getType() == Material.ENCHANTED_BOOK) {
+						InventorySQL.d("Adding ench to ENCHANTED_BOOK");
+						((EnchantmentStorageMeta) m).addStoredEnchant(e,
+								ench_level, Config.allow_unsafe_ench);
+					} else {
+						m.addEnchant(e, ench_level, Config.allow_unsafe_ench);
+					}
 				} catch (Exception ex) {
 					InventorySQL.log(Level.WARNING,
 							"Error while adding " + e.getName() + "/"

@@ -16,7 +16,7 @@ public class ConnectionManager implements Closeable {
 
 	private boolean ready = false;
 	// private static int poolsize = 3;
-	private static long timeToLive = 300000;
+	private static long timeToLive = 30 * 1000;
 	private static List<JDCConnection> connections;
 	private final ConnectionReaper reaper;
 	private final String url;
@@ -26,7 +26,6 @@ public class ConnectionManager implements Closeable {
 	public ConnectionManager(String url, String user, String password)
 			throws ClassNotFoundException {
 		Class.forName("com.mysql.jdbc.Driver");
-		InventorySQL.d("Attempting to connecting to database at: " + url);
 		this.url = url;
 		this.user = user;
 		this.password = password;
@@ -34,14 +33,22 @@ public class ConnectionManager implements Closeable {
 		ready = true;
 		connections = new ArrayList<JDCConnection>(Config.dbPoolSize);
 		reaper = new ConnectionReaper();
-		reaper.start();
 		instance = this;
+	}
+
+	public boolean initialize() {
+		InventorySQL.d("Attempting to connecting to database at: " + url);
 		try {
-			getConnection();
+			if (getConnection(false).isValid(1)) {
+				InventorySQL.d("Database is ready !");
+				reaper.start();
+				ready = true;
+			}
 		} catch (SQLException sql) {
 			InventorySQL.log(Level.SEVERE, sql.getLocalizedMessage());
 			ready = false;
 		}
+		return ready;
 	}
 
 	public boolean isReady() {
@@ -62,14 +69,15 @@ public class ConnectionManager implements Closeable {
 	 * @return returns a {JDCConnection}
 	 * @throws SQLException
 	 */
-	public synchronized JDCConnection getConnection() throws SQLException {
+	private synchronized JDCConnection getConnection(boolean markAsUsed)
+			throws SQLException {
 		if (!ready)
 			return null;
 		JDCConnection conn = null;
 		try {
 			for (int i = 0; i < connections.size(); i++) {
 				conn = connections.get(i);
-				if (conn.lease()) {
+				if (conn.lease(markAsUsed)) {
 					if (conn.isValid())
 						return conn;
 					InventorySQL.d("Removing dead MySQL connection");
@@ -81,7 +89,7 @@ public class ConnectionManager implements Closeable {
 					.d("No available MySQL connections, attempting to create new one");
 			conn = new JDCConnection(DriverManager.getConnection(url, user,
 					password));
-			conn.lease();
+			conn.lease(markAsUsed);
 			if (!conn.isValid()) {
 				conn.terminate();
 				throw new SQLException("Could not create new connection");
@@ -93,6 +101,10 @@ public class ConnectionManager implements Closeable {
 
 		}
 		return conn;
+	}
+
+	public synchronized JDCConnection getConnection() throws SQLException {
+		return getConnection(true);
 	}
 
 	/**

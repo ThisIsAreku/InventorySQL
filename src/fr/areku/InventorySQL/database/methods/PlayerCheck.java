@@ -15,7 +15,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.MapMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 
 import fr.areku.InventorySQL.Config;
 import fr.areku.InventorySQL.InventorySQL;
@@ -66,53 +69,64 @@ public class PlayerCheck extends SQLMethod {
 			}
 		}
 
-		StringBuilder players_to_remove_sb = new StringBuilder();
+		if (targetPlayers.length == 0) {
+			InventorySQL.d(this.hashCode() + " => noPlayers");
+			return;
+		}
+
+		InventorySQL.d(this.hashCode() + " => targetPlayers:"
+				+ targetPlayers.length);
+		Map<String, String> players_to_remove = new HashMap<String, String>();
+		// StringBuilder players_to_remove_sb = new StringBuilder();
 
 		prepareSQLCommit();
 
 		for (Player p : targetPlayers) {
 			InventorySQL.d(this.hashCode() + " => checkPlayers:" + p.getName());
-			String pName = p.getName();
+			String userName = p.getName();
 
 			try {
 				if (InventorySQL.isUsingAuthenticator()) {
 					if (!fr.areku.Authenticator.Authenticator
 							.isPlayerLoggedIn(p)) {
 						InventorySQL.d(this.hashCode() + " => checkPlayers:"
-								+ pName + " !UNAUTHORIZED");
+								+ userName + " !UNAUTHORIZED");
 						continue;
 					}
 				}
 				if (!Config.gamemode.contains(p.getGameMode())) {
 					InventorySQL.d(this.hashCode() + " => checkPlayers:"
-							+ pName + " !GAMEMODE");
+							+ userName + " !GAMEMODE");
 					return;
 				}
 
-				int userID = PlayerManager.getInstance().get(pName).getSqlId();
+				int userID = PlayerManager.getInstance().get(userName)
+						.getSqlId();
+				String userWorld = p.getWorld().getName();
 				if (userID == -1) {
 					InventorySQL
 							.d(this.hashCode() + " => UserID is not cached");
 					PreparedStatement sth = getConn().prepareStatement(
 							"SELECT `id` FROM `" + Config.dbTable_Users
 									+ "` WHERE UPPER(`name`) = UPPER(?);");
-					sth.setString(1, pName);
+					sth.setString(1, userName);
 					ResultSet rs = sth.executeQuery();
 					if (rs.first()) {
 						userID = rs.getInt(1);
 					} else {
 						InventorySQL.d(this.hashCode()
-								+ " => Creating entry for " + pName);
+								+ " => Creating entry for " + userName);
 						userID = executeInsert(getConn().prepareStatement(
 								"INSERT INTO `" + Config.dbTable_Users
 										+ "`(`name`, `password`) VALUES ('"
-										+ pName + "','')",
+										+ userName + "','')",
 								Statement.RETURN_GENERATED_KEYS));
-						PlayerManager.getInstance().get(pName).updateHash("");
+						PlayerManager.getInstance().get(userName)
+								.updateHash("");
 					}
 					rs.close();
 					sth.close();
-					PlayerManager.getInstance().get(pName).setSqlId(userID);
+					PlayerManager.getInstance().get(userName).setSqlId(userID);
 				}
 
 				InventorySQL.d(this.hashCode() + " => userID: " + userID);
@@ -120,14 +134,23 @@ public class PlayerCheck extends SQLMethod {
 				int added = 0;
 				int removed = 0;
 
+				/*******************************/
+				/** MIRROR-MODE ************/
+				/*******************************/
 				if (Config.mirrorMode) {
-					boolean fs = PlayerManager.getInstance().get(pName)
+					boolean fs = PlayerManager.getInstance().get(userName)
 							.isFirstSessionCheck();
+					InventorySQL.d(this.hashCode()
+							+ " => isFirstSessionCheck: " + fs);
 					if (doMirroring(userID, p)) {
+						InventorySQL.d(this.hashCode()
+								+ " => MirrorEndAlreadyLatest");
 						if (fs)
 							p.sendMessage(ChatColor.RED + "[InventorySQL] "
 									+ InventorySQL.getMessage("mirror-latest"));
 					} else {
+						InventorySQL
+								.d(this.hashCode() + " => MirrorEndUpdated");
 						if (fs)
 							p.sendMessage(ChatColor.RED + "[InventorySQL] "
 									+ InventorySQL.getMessage("mirror-done"));
@@ -143,19 +166,19 @@ public class PlayerCheck extends SQLMethod {
 							+ Config.dbTable_Enchantments
 							+ "` AS `enchantments` ON `pendings`.`id` = `enchantments`.`id`";
 					if (Config.backup_enabled)
-						q += " AND `enchantments`.`is_backup` != 1";
+						q += " AND (`enchantments`.`is_backup` != 1 OR `enchantments`.`is_backup` IS NULL)";
 
 					q += " LEFT JOIN `" + Config.dbTable_Meta
 							+ "` AS `meta` ON `pendings`.`id` = `meta`.`id`";
 					if (Config.backup_enabled)
-						q += " AND `meta`.`is_backup` != 1";
+						q += " AND (`meta`.`is_backup` != 1 OR `meta`.`is_backup` IS NULL)";
 
 					q += " WHERE (`pendings`.`owner` = ?";
 					if (Config.multiworld)
 						q += " AND `pendings`.`world` = ?";
 
 					q += ");";
-
+					
 					InventorySQL.d(q);
 
 					PreparedStatement sth = getConn().prepareStatement(q);
@@ -167,7 +190,7 @@ public class PlayerCheck extends SQLMethod {
 
 					if (rs.first()) {
 						InventorySQL.d(this.hashCode()
-								+ " => pendings items for " + pName);
+								+ " => pendings items for " + userName);
 
 						Map<String, SQLItemStack> stackList = new HashMap<String, SQLItemStack>();
 						String latest_id = "";
@@ -208,9 +231,8 @@ public class PlayerCheck extends SQLMethod {
 						InventorySQL.d(this.hashCode()
 								+ " => checkPlayers:PendingsDone:+" + added
 								+ "/-" + removed + " of " + stackList.size());
-						if (donePendings.endsWith(","))
-							donePendings = donePendings.substring(0,
-									donePendings.length() - 1);
+						InventorySQL.d(this.hashCode()
+								+ " => donePendings:"+donePendings);
 
 						if (donePendings != "") {
 							InventorySQL
@@ -221,42 +243,48 @@ public class PlayerCheck extends SQLMethod {
 									"DELETE FROM `"
 											+ Config.dbTable_Enchantments
 											+ "` WHERE `id` IN ("
-											+ donePendings + ");");
+											+ donePendings + "0);");
 							getConn().createStatement().executeUpdate(
 									"DELETE FROM `" + Config.dbTable_Pendings
 											+ "` WHERE `id` IN ("
-											+ donePendings + ");");
+											+ donePendings + "0);");
 							getConn().createStatement().executeUpdate(
 									"DELETE FROM `" + Config.dbTable_Meta
 											+ "` WHERE `id` IN ("
-											+ donePendings + ");");
+											+ donePendings + "0);");
 						}
 						sendMessage("[InventorySQL] "
 								+ ChatColor.GREEN
 								+ "("
-								+ pName
+								+ userName
 								+ ") "
 								+ InventorySQL.getMessage("modif", added,
 										removed, stackList.size()));
 
 					} else {
 						sendMessage("[InventorySQL] " + ChatColor.GREEN + "("
-								+ pName + ") "
+								+ userName + ") "
 								+ InventorySQL.getMessage("no-modif"));
 
 					}
 					rs.close();
 					sth.close();
 				}
-				PlayerManager.getInstance().get(pName)
+
+				PlayerManager.getInstance().get(userName)
 						.updateEpoch(getCurrentCheckEpoch());
 				String theInvHash = PlayerManager.computePlayerInventoryHash(p);
-				if (PlayerManager.getInstance().get(pName)
+				if (PlayerManager.getInstance().get(userName)
 						.updateHash(theInvHash)) {
 					InventorySQL.d(this.hashCode()
 							+ " => checkPlayers:InventoryModified");
 
-					players_to_remove_sb.append(userID + ",");
+					if (!players_to_remove.containsKey(userWorld))
+						players_to_remove.put(userWorld, "");
+					players_to_remove.put(userWorld,
+							players_to_remove.get(userWorld) + userID + ",");
+					InventorySQL.d(this.hashCode()
+							+ " => checkPlayers:AddedToGC:" + userName);
 
 					// update standart slots
 					for (Integer invSlotID = 0; invSlotID < 36; invSlotID++) {
@@ -283,47 +311,69 @@ public class PlayerCheck extends SQLMethod {
 			e1.printStackTrace();
 		}
 
-		String final_players_id = players_to_remove_sb.toString();
-		if (final_players_id.length() > 0) {
+		if (players_to_remove.size() > 0) {
 			String q = "DELETE `inventories`, `enchantments`, `meta` FROM `"
 					+ Config.dbTable_Inventories
 					+ "` AS `inventories` LEFT JOIN `"
 					+ Config.dbTable_Enchantments
 					+ "` AS `enchantments` ON `inventories`.`id` = `enchantments`.`id`";
 			if (Config.backup_enabled)
-				q += " AND `enchantments`.`is_backup` != 1";
+				q += " AND (`enchantments`.`is_backup` != 1)";
 
 			q += " LEFT JOIN `" + Config.dbTable_Meta
 					+ "` AS `meta` ON `inventories`.`id` = `meta`.`id`";
 			if (Config.backup_enabled)
-				q += " AND `meta`.`is_backup` != 1";
+				q += " AND (`meta`.`is_backup` != 1)";
+			
+			q += " WHERE";
 
-			q += " WHERE (`inventories`.`owner` IN (" + final_players_id
-					+ "0) AND `inventories`.`date` != ?";
-			/*
-			 * if (Config.multiworld) q += " AND `inventories`.`world` = ?";
-			 */
+			if (Config.multiworld) {
+				for (Entry<String, String> ptr : players_to_remove.entrySet()) {
+					InventorySQL.d("MW:" + ptr.getKey() + ":" + ptr.getValue());
+					String w = q
+							+ " (`inventories`.`owner` IN ("
+							+ ptr.getValue()
+							+ "0) AND `inventories`.`date` != ? AND `inventories`.`world` = ?)";
 
-			q += ")";
+					try {
+						PreparedStatement sth = getConn().prepareStatement(w);
+						sth.setLong(1, getCurrentCheckEpoch());
+						// sth.setString(1, final_players_id);
 
-			try {
-				PreparedStatement sth = getConn().prepareStatement(q);
-				sth.setLong(1, getCurrentCheckEpoch());
-				// sth.setString(1, final_players_id);
-				/*
-				 * if (Config.multiworld) sth.setString(2,
-				 * p.getWorld().getName());
-				 */
-				sth.executeUpdate();
-				sth.close();
-				InventorySQL.d(this.hashCode()
-						+ " => Cleaning:OldRecordsOfinventories");
-				InventorySQL.d(this.hashCode() + " => " + q + " - IDs: "
-						+ final_players_id + " - time: "
-						+ getCurrentCheckEpoch());
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+						sth.setString(2, ptr.getKey());
+
+						sth.executeUpdate();
+						sth.close();
+						InventorySQL
+								.d(this.hashCode()
+										+ " => Cleaning:OldRecordsOfinventories:Multiworld");
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+			} else {
+				String all = "";
+				for (String ptr : players_to_remove.values())
+					all += ptr;
+				InventorySQL.d("No MW:" + all);
+
+				String w = q
+						+ " (`inventories`.`owner` IN ("
+						+ all
+						+ "0) AND `inventories`.`date` != ? AND `inventories`.`world` = ?)";
+
+				try {
+					PreparedStatement sth = getConn().prepareStatement(w);
+					sth.setLong(1, getCurrentCheckEpoch());
+
+					sth.executeUpdate();
+					sth.close();
+					InventorySQL
+							.d(this.hashCode()
+									+ " => Cleaning:OldRecordsOfinventories:NoMultiworld");
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
@@ -342,21 +392,30 @@ public class PlayerCheck extends SQLMethod {
 			q += " AND `inventories`.`world` = ?";
 
 		if (Config.backup_enabled)
-			q += " AND `enchantments`.`is_backup` != 1 AND `meta`.`is_backup` != 1";
+			q += " AND ((`enchantments`.`is_backup` != 1 OR `enchantments`.`is_backup` IS NULL) AND (`meta`.`is_backup` != 1 OR `meta`.`is_backup` IS NULL))";
 
 		q += ");";
+
+		InventorySQL.d(q + "//"
+				+ PlayerManager.getInstance().get(p.getName()).getEpoch()
+				+ "//" + userID);
+
+		String worldName = p.getWorld().getName();
+
 		PreparedStatement sth = getConn().prepareStatement(q);
 		sth.setLong(1, PlayerManager.getInstance().get(p.getName()).getEpoch());
 		sth.setInt(2, userID);
 		if (Config.multiworld)
-			sth.setString(3, p.getWorld().getName());
+			sth.setString(3, worldName);
 
 		ResultSet rs = sth.executeQuery();
 
 		if (rs.first()) {
 			InventorySQL.d(this.hashCode() + " => Mirroring:SQLMoreRecent");
-			InventorySQL.d(this.hashCode()
-					+ " => Mirroring:TODO:Fetch inv from SQL");
+			/*
+			 * InventorySQL.d(this.hashCode() +
+			 * " => Mirroring:TODO:Fetch inv from SQL");
+			 */
 			if (doGive) {
 				Map<String, SQLItemStack> stackList = new HashMap<String, SQLItemStack>();
 				String latest_id = "";
@@ -392,7 +451,7 @@ public class PlayerCheck extends SQLMethod {
 					}
 				}
 			}
-			updateSQLTime(userID, p);
+			updateSQLTime(userID, worldName);
 			r = false;
 		} else {
 			InventorySQL.d(this.hashCode()
@@ -408,7 +467,8 @@ public class PlayerCheck extends SQLMethod {
 		return r;
 	}
 
-	private void updateSQLTime(int userID, Player p) throws SQLException {
+	private void updateSQLTime(int userID, String worldName)
+			throws SQLException {
 		String up = "UPDATE `"
 				+ Config.dbTable_Inventories
 				+ "` AS `inventories` SET `date`=?,`event`=? WHERE (`inventories`.`owner` = ?";
@@ -420,7 +480,7 @@ public class PlayerCheck extends SQLMethod {
 		sth2.setString(2, getInitiator());
 		sth2.setInt(3, userID);
 		if (Config.multiworld)
-			sth2.setString(4, p.getWorld().getName());
+			sth2.setString(4, worldName);
 		sth2.executeUpdate();
 		InventorySQL.d(this.hashCode() + " => Mirroring:SQLTimeUpdated");
 	}
@@ -479,6 +539,8 @@ public class PlayerCheck extends SQLMethod {
 
 	private void updateSQL(Player p, int userID, ItemStack stack, int slotID) {
 		this.commitRequired = true;
+		InventorySQL.d(this.hashCode() + " => updateSQL:" + p.getName()
+				+ ":slotid=" + slotID);
 		ItemStack invSlotItem;
 		try {
 			invSlotItem = p.getInventory().getItem(slotID);
@@ -503,10 +565,17 @@ public class PlayerCheck extends SQLMethod {
 			 */
 
 			ItemMeta invMeta = invSlotItem.getItemMeta();
-			if (invMeta.hasEnchants()) {
+			Map<Enchantment, Integer> enchMap = null;
+			if (invMeta instanceof EnchantmentStorageMeta) {
+				enchMap = ((EnchantmentStorageMeta) invMeta)
+						.getStoredEnchants();
+			} else if (invMeta.hasEnchants()) {
+				enchMap = invMeta.getEnchants();
+			}
+
+			if (enchMap != null) {
 				int i = 0;
-				for (Entry<Enchantment, Integer> e : invMeta.getEnchants()
-						.entrySet()) {
+				for (Entry<Enchantment, Integer> e : enchMap.entrySet()) {
 					this.updatesql_ench += "('" + invSlotID + "', " + i + ", "
 							+ e.getKey().getId() + ", " + e.getValue()
 							+ ", 0),";
@@ -540,6 +609,45 @@ public class PlayerCheck extends SQLMethod {
 						}
 					}
 				}
+
+			/* handle for special items */
+			if (invMeta instanceof SkullMeta) {
+				this.updatesql_meta += "('" + invSlotID + "', 'Owner', '"
+						+ ((SkullMeta) invMeta).getOwner() + "', 0),";
+				if (Config.backup_enabled) {
+					this.updatesql_meta += "('" + invSlotID + "', 'Owner', '"
+							+ ((SkullMeta) invMeta).getOwner() + "', 1),";
+				}
+			} else if (invMeta instanceof MapMeta) {
+				this.updatesql_meta += "('" + invSlotID + "', 'Scaling', '"
+						+ ((MapMeta) invMeta).isScaling() + "', 0),";
+				if (Config.backup_enabled) {
+					this.updatesql_meta += "('" + invSlotID + "', 'Scaling', '"
+							+ ((MapMeta) invMeta).isScaling() + "', 1),";
+				}
+			}
+
+			/*
+			 * switch (invSlotItem.getType()) { case MONSTER_EGG:
+			 * this.updatesql_meta += "('" + invSlotID + "', 'SpawnedType', '" +
+			 * ((SpawnEgg) invMeta).getSpawnedType().getTypeId() + "', 0),";
+			 * break; case INK_SACK: this.updatesql_meta += "('" + invSlotID +
+			 * "', 'Color', '" + ((Dye) invMeta).getColor().getDyeData() +
+			 * "', 0),"; break; case WOOD: case SAPLING: case LOG: case LEAVES:
+			 * this.updatesql_meta += "('" + invSlotID + "', 'Species', '" +
+			 * ((Tree) invMeta).getSpecies().getData() + "', 0),"; break; case
+			 * WOOD_DOUBLE_STEP: case WOOD_STEP: this.updatesql_meta += "('" +
+			 * invSlotID + "', 'Species', '" + ((WoodenStep)
+			 * invMeta).getSpecies().getData() + "', 0),"; break; case
+			 * SANDSTONE: this.updatesql_meta += "('" + invSlotID +
+			 * "', 'Type', '" + ((Sandstone) invMeta).getType().getData() +
+			 * "', 0),"; break; case COAL: this.updatesql_meta += "('" +
+			 * invSlotID + "', 'Type', '" + ((Coal) invMeta).getType().getData()
+			 * + "', 0),"; break; case WOOL: this.updatesql_meta += "('" +
+			 * invSlotID + "', 'Color', '" + ((Wool)
+			 * invMeta).getColor().getWoolData() + "', 0),"; break; default:
+			 * break; }
+			 */
 		}
 	}
 

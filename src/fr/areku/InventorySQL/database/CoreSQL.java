@@ -42,7 +42,7 @@ public class CoreSQL implements SQLUpdaterResult {
 		this.connectionManager = new ConnectionManager("jdbc:mysql://"
 				+ Config.dbHost + "/" + Config.dbDatabase, Config.dbUser,
 				Config.dbPass);
-		if (this.connectionManager.isReady()) {
+		if (this.connectionManager.initialize()) {
 			SQLUpdater updater = new SQLUpdater(this);
 			updater.checkUpdateTable();
 		}
@@ -152,6 +152,11 @@ public class CoreSQL implements SQLUpdaterResult {
 					"Check your config and use /invsql reload");
 			disable();
 		}
+	}
+	
+	public void handleCriticalError()
+	{
+		this.databaseReady = false;
 	}
 
 }

@@ -12,6 +12,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 
 import fr.areku.InventorySQL.Config;
+import fr.areku.InventorySQL.InvSQLPlayer;
 import fr.areku.InventorySQL.InventorySQL;
 import fr.areku.InventorySQL.InventorySQLCommand;
 import fr.areku.InventorySQL.InventorySQLCommandListener;
@@ -58,6 +59,12 @@ public class Commandinvsql extends InventorySQLCommand {
 					+ ConnectionManager.getNumConn() + "/" + Config.dbPoolSize);
 			sendMessage(cs, ChatColor.YELLOW + "Player cache : "
 					+ PlayerManager.getNumPlayers());
+			for (InvSQLPlayer p : PlayerManager.getInstance().getAll()) {
+				sendMessage(cs, ChatColor.YELLOW + "-> " + p.getPlayerName()
+						+ " (" + p.getSqlId() + ")");
+				sendMessage(cs, ChatColor.YELLOW + "   Hash: " + p.getHash());
+				sendMessage(cs, ChatColor.YELLOW + "   Epoch: " + p.getEpoch());
+			}
 			sendMessage(cs, ChatColor.YELLOW + "------------------");
 			return true;
 		}
@@ -76,8 +83,8 @@ public class Commandinvsql extends InventorySQLCommand {
 				sendHelp(cs);
 				return true;
 			}
-			if (CoreSQL.getInstance().updatePlayerPassword(
-					cs.getName(), combine(args, " "))) {
+			if (CoreSQL.getInstance().updatePlayerPassword(cs.getName(),
+					combine(args, " "))) {
 				sendMessage(cs, ChatColor.BLUE + "Password changed");
 			} else {
 				sendMessage(cs, ChatColor.RED + "Unable to change password");
@@ -97,8 +104,8 @@ public class Commandinvsql extends InventorySQLCommand {
 							ChatColor.GREEN
 									+ InventorySQL
 											.getMessage("check-all-players"));
-					CoreSQL.getInstance().runPlayerCheck("Command",
-							null, true, 0);
+					CoreSQL.getInstance().runPlayerCheck("Command", null, true,
+							0);
 					return true;
 				}
 				Player pT;
@@ -140,8 +147,8 @@ public class Commandinvsql extends InventorySQLCommand {
 						cs,
 						ChatColor.GREEN
 								+ InventorySQL.getMessage("check-yourself"));
-				CoreSQL.getInstance().runPlayerCheck((Player) cs,
-						"Command", cs);
+				CoreSQL.getInstance()
+						.runPlayerCheck((Player) cs, "Command", cs);
 			}
 		}
 
